@@ -1,0 +1,201 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Nav
+@using Training_Management_System_UI.Services
+@* ADMIN SESSION *@
+@inject AuthService AuthService
+@inject UserSessionService UserSessionService
+
+<div class="admin-shell">
+    <div class="scanlines"></div>
+    <div class="bg-glow"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar @(sidebarCollapsed ? "collapsed" : "")">
+        <div class="sidebar-brand">
+            <div class="logo-icon">
+                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="20,2 38,12 38,28 20,38 2,28 2,12" stroke="#E0251A" stroke-width="2" fill="none" />
+                    <polygon points="20,8 32,15 32,25 20,32 8,25 8,15" fill="#E0251A" opacity="0.3" />
+                    <line x1="20" y1="2" x2="20" y2="38" stroke="#E0251A" stroke-width="1" opacity="0.5" />
+                    <line x1="2" y1="20" x2="38" y2="20" stroke="#E0251A" stroke-width="1" opacity="0.5" />
+                </svg>
+            </div>
+            @if (!sidebarCollapsed)
+            {
+                <div class="brand-text">
+                    <span class="brand-name">SITESPHIL</span>
+                    <span class="brand-sub">Training Management</span>
+                </div>
+            }
+        </div>
+
+        <button class="collapse-btn" @onclick="ToggleSidebar" title="@(sidebarCollapsed ? "Expand" : "Collapse")">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                @if (sidebarCollapsed)
+                {
+                    <path d="M7 5l6 5-6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                }
+                else
+                {
+                    <path d="M13 5l-6 5 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                }
+            </svg>
+        </button>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="nav-section-label">@(!sidebarCollapsed ? "MAIN" : "")</div>
+
+        <nav class="sidebar-nav">
+            <!-- Dashboard -->
+            <NavLink href="/admin/dashboard" class="nav-item" ActiveClass="nav-item-active" Match="NavLinkMatch.All">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="2" y="2" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5" />
+                        <rect x="11" y="2" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5" />
+                        <rect x="2" y="11" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5" />
+                        <rect x="11" y="11" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5" />
+                    </svg>
+                </span>
+                @if (!sidebarCollapsed)
+                {
+                    <span class="nav-label">Dashboard</span>
+                }
+            </NavLink>
+
+            <!-- Trainings group -->
+            <div class="nav-group-label">@(!sidebarCollapsed ? "TRAININGS" : "")</div>
+
+            <NavLink href="/admin/create-training" class="nav-item" ActiveClass="nav-item-active">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M10 6v8M6 10h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </span>
+                @if (!sidebarCollapsed)
+                {
+                    <span class="nav-label">Create Training</span>
+                }
+            </NavLink>
+
+            <NavLink href="/admin/manage-trainings" class="nav-item" ActiveClass="nav-item-active">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 5h14M3 10h14M3 15h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </span>
+                @if (!sidebarCollapsed)
+                {
+                    <span class="nav-label">Manage Trainings</span>
+                }
+            </NavLink>
+
+            <!-- Users group -->
+            <div class="nav-group-label">@(!sidebarCollapsed ? "ACCOUNTS" : "")</div>
+
+            <NavLink href="/admin/users" class="nav-item" ActiveClass="nav-item-active">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M2 17c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M15 8v4M17 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </span>
+                @if (!sidebarCollapsed)
+                {
+                    <span class="nav-label">Users</span>
+                }
+            </NavLink>
+        </nav>
+
+        <!-- User Profile -->
+        <div class="sidebar-footer">
+            <div class="sidebar-divider"></div>
+            @if (!sidebarCollapsed)
+            {
+                <div class="user-profile">
+                    <div class="user-avatar-sm">A</div>
+                    <div class="user-info">
+                        <span class="user-name-sm">Admin</span>
+                        <span class="user-role-sm">Administrator</span>
+                    </div>
+                </div>
+            }
+            <button class="nav-item logout-btn" @onclick="HandleLogout" title="Logout">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 3H4a1 1 0 00-1 1v12a1 1 0 001 1h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M13 13l4-3-4-3M17 10H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </span>
+                @if (!sidebarCollapsed)
+                {
+                    <span class="nav-label">Logout</span>
+                }
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <!-- Top bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="breadcrumb-indicator">
+                    <span class="bc-dot"></span>
+                    <span class="bc-text">ADMIN PANEL</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="topbar-clock">@currentTime</div>
+                <div class="topbar-status">
+                    <span class="status-indicator"></span>
+                    <span>SYSTEM ONLINE</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="page-area">
+            @Body
+        </div>
+    </main>
+</div>
+
+@code {
+    private bool sidebarCollapsed = false;
+    private string currentTime = string.Empty;
+    private System.Threading.Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        UpdateTime();
+        _timer = new System.Threading.Timer(_ =>
+        {
+            UpdateTime();
+            InvokeAsync(StateHasChanged);
+        }, null, 1000, 1000);
+    }
+
+    private void UpdateTime()
+    {
+        currentTime = DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    private void ToggleSidebar()
+    {
+        sidebarCollapsed = !sidebarCollapsed;
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        UserSessionService.Clear();
+        Nav.NavigateTo("/login", forceLoad: true);
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}

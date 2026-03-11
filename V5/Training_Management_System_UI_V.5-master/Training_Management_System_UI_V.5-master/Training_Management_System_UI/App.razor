@@ -1,0 +1,24 @@
+﻿<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <AuthGuard RequiredRole="@GetRequiredRole(routeData)">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        </AuthGuard>
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p role="alert">Sorry, there's nothing at this address.</p>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@code {
+    private string GetRequiredRole(RouteData routeData)
+    {
+        var path = routeData.PageType.FullName ?? string.Empty;
+        if (path.Contains("Admin") || path.Contains("admin")) return "Admin";
+        if (path.Contains("Employee") || path.Contains("employee")) return "Employee";
+        return string.Empty;
+    }
+}

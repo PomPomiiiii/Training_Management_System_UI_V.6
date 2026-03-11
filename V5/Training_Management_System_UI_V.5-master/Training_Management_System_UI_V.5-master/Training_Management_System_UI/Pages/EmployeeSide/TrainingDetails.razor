@@ -1,0 +1,330 @@
+﻿@page "/employee/trainings/{TrainingId:int}"
+@layout EmployeeLayout
+
+<PageTitle>@(training?.Title ?? "Training Details") | SitesPhil TMS</PageTitle>
+
+<div class="page-wrapper">
+
+    <!-- Back nav -->
+    <a href="/employee/trainings" class="back-link">
+        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13 8H3M7 12l-4-4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Back to Trainings
+    </a>
+
+    @if (training is null)
+    {
+        <div class="not-found">
+            <p>Training not found.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-left">
+                <div class="page-eyebrow">
+                    <span class="eyebrow-line"></span>
+                    <span>Training Details</span>
+                </div>
+                <h1 class="page-title">@training.Title</h1>
+                <p class="page-subtitle">
+                    @training.TrainingDurationInDays day@(training.TrainingDurationInDays == 1 ? "" : "s") · Added @training.CreatedAt.ToString("MMMM d, yyyy")
+                </p>
+            </div>
+
+            <a href="/employee/trainings/@TrainingId/materials" class="btn-primary">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="4" width="14" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M3 2h11l3 3v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path d="M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+                View Materials
+            </a>
+        </div>
+
+        <!-- Meta badges row -->
+        <div class="meta-row">
+            <div class="meta-chip duration">
+                <svg viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="3" width="14" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2" />
+                    <path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                </svg>
+                @training.TrainingDurationInDays Day@(training.TrainingDurationInDays == 1 ? "" : "s") Training
+            </div>
+            <div class="meta-chip materials">
+                <svg viewBox="0 0 16 16" fill="none">
+                    <rect x="2" y="3" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2" />
+                    <path d="M2 1.5h9l3 3v1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                    <path d="M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                </svg>
+                @training.Materials.Count Material@(training.Materials.Count == 1 ? "" : "s")
+            </div>
+            <div class="meta-chip attendees">
+                <svg viewBox="0 0 16 16" fill="none">
+                    <circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.2" />
+                    <path d="M1 14c0-2.8 2.2-4.5 5-4.5s5 1.7 5 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                    <path d="M12 7v4M14 9h-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                </svg>
+                @training.Attendees.Count Attendee@(training.Attendees.Count == 1 ? "" : "s")
+            </div>
+        </div>
+
+        <!-- Content layout -->
+        <div class="content-layout">
+
+            <!-- Description + Attendees -->
+            <div class="main-col">
+
+                <!-- Description -->
+                <div class="info-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <span class="panel-accent"></span>
+                            <h2 class="panel-title">Description</h2>
+                        </div>
+                    </div>
+                    <p class="training-description">
+                        @(string.IsNullOrWhiteSpace(training.Description) ? "No description provided for this training." : training.Description)
+                    </p>
+                </div>
+
+                <!-- Attendees list — ERD: TrainingAttendee (TrainingId FK, Name, Email, Contact) -->
+                <div class="info-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <span class="panel-accent"></span>
+                            <h2 class="panel-title">Attendees</h2>
+                        </div>
+                        <span class="attendee-count-badge">@training.Attendees.Count</span>
+                    </div>
+
+                    @if (!training.Attendees.Any())
+                    {
+                        <div class="empty-mini">No attendees recorded.</div>
+                    }
+                    else
+                    {
+                        <div class="attendees-table-wrap">
+                            <table class="attendees-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Full Name</th>
+                                        <th>Email</th>
+                                        <th>Contact</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int idx = 1;
+                                    }
+                                    @foreach (var att in training.Attendees)
+                                    {
+                                        <tr class="att-row">
+                                            <td class="td-num">@(idx++)</td>
+                                            <td>
+                                                <div class="att-name-cell">
+                                                    <span class="att-avatar">@att.Name[0]</span>
+                                                    <span class="att-name">@att.Name</span>
+                                                </div>
+                                            </td>
+                                            <td class="td-email">@att.Email</td>
+                                            <td class="td-contact">@att.Contact</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+
+            </div>
+
+            <!-- Materials sidebar summary -->
+            <div class="side-col">
+                <div class="info-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <span class="panel-accent"></span>
+                            <h2 class="panel-title">Materials</h2>
+                        </div>
+                        <a href="/employee/trainings/@TrainingId/materials" class="panel-link">View all →</a>
+                    </div>
+
+                    @if (!training.Materials.Any())
+                    {
+                        <div class="empty-mini">No materials uploaded yet.</div>
+                    }
+                    else
+                    {
+                        <div class="materials-list">
+                            @foreach (var m in training.Materials.Take(5))
+                            {
+                                <div class="material-row">
+                                    <div class="mat-icon-wrap">
+                                        @GetFileIcon(m.MimeType)
+                                    </div>
+                                    <div class="mat-info">
+                                        <span class="mat-name">@m.OriginalFileName</span>
+                                        <!-- ERD: FileSize, MimeType -->
+                                        <span class="mat-meta">@FormatSize(m.FileSize) · @GetMimeLabel(m.MimeType)</span>
+                                    </div>
+                                </div>
+                            }
+                            @if (training.Materials.Count > 5)
+                            {
+                                <div class="materials-more">+@(training.Materials.Count - 5) more file@(training.Materials.Count - 5 == 1 ? "" : "s")</div>
+                            }
+                        </div>
+                    }
+
+                    <a href="/employee/trainings/@TrainingId/materials" class="btn-materials-full">
+                        <svg viewBox="0 0 16 16" fill="none">
+                            <rect x="2" y="3" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2" />
+                            <path d="M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                        </svg>
+                        Open All Materials
+                    </a>
+                </div>
+
+                <!-- Training info card -->
+                <div class="info-panel" style="margin-top:14px;">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <span class="panel-accent"></span>
+                            <h2 class="panel-title">Info</h2>
+                        </div>
+                    </div>
+                    <div class="info-rows">
+                        <div class="info-row">
+                            <span class="info-label">Training ID</span>
+                            <!-- ERD: TrainingId PK -->
+                            <span class="info-value">#@training.TrainingId</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Duration</span>
+                            <span class="info-value">@training.TrainingDurationInDays day@(training.TrainingDurationInDays == 1 ? "" : "s")</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Created</span>
+                            <!-- ERD: CreatedAt -->
+                            <span class="info-value">@training.CreatedAt.ToString("MMM d, yyyy")</span>
+                        </div>
+                        @if (training.UpdatedAt.HasValue)
+                        {
+                            <div class="info-row">
+                                <span class="info-label">Updated</span>
+                                <!-- ERD: UpdatedAt -->
+                                <span class="info-value">@training.UpdatedAt.Value.ToString("MMM d, yyyy")</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    }
+
+</div>
+
+@code {
+    [Parameter] public int TrainingId { get; set; }
+
+    private TrainingDetail? training;
+
+    protected override void OnParametersSet()
+    {
+        // Simulated data — replace with API call
+        training = TrainingId switch
+        {
+            1 => new TrainingDetail
+            {
+                TrainingId = 1,
+                Title = "Workplace Safety Orientation",
+                Description = "This training covers fundamental safety practices and procedures for all site personnel. Topics include hazard identification, proper PPE usage, and emergency response basics.",
+                TrainingDurationInDays = 1,
+                CreatedAt = new DateTime(2025, 1, 10),
+                UpdatedAt = new DateTime(2025, 2, 1),
+                Materials = new()
+                {
+                    new() { OriginalFileName = "Safety_Handbook.pdf",        MimeType = "application/pdf",         FileSize = 2457600  },
+                    new() { OriginalFileName = "PPE_Guide.pdf",              MimeType = "application/pdf",         FileSize = 1048576  },
+                    new() { OriginalFileName = "Emergency_Procedures.docx",  MimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document", FileSize = 512000 },
+                    new() { OriginalFileName = "Site_Map.png",               MimeType = "image/png",               FileSize = 204800   },
+                },
+                Attendees = new()
+                {
+                    new() { Name = "Juan dela Cruz",   Email = "juan@example.com",   Contact = "09171234567" },
+                    new() { Name = "Maria Santos",     Email = "maria@example.com",  Contact = "09181234567" },
+                    new() { Name = "Pedro Reyes",      Email = "pedro@example.com",  Contact = "09191234567" },
+                },
+            },
+            _ => null
+        };
+    }
+
+    private string FormatSize(long bytes)
+    {
+        if (bytes >= 1_048_576) return $"{bytes / 1_048_576.0:F1} MB";
+        if (bytes >= 1024) return $"{bytes / 1024.0:F0} KB";
+        return $"{bytes} B";
+    }
+
+    private string GetMimeLabel(string mime) => mime switch
+    {
+        "application/pdf" => "PDF",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => "Word",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => "Excel",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation" => "PowerPoint",
+        "image/png" => "PNG",
+        "image/jpeg" => "JPEG",
+        "video/mp4" => "MP4",
+        _ => "File"
+    };
+
+    private RenderFragment GetFileIcon(string mime) => builder =>
+    {
+        builder.AddMarkupContent(0, mime switch
+        {
+            "application/pdf" =>
+                "<svg viewBox='0 0 14 14' fill='none'><rect x='1' y='1' width='12' height='12' rx='1' stroke='currentColor' stroke-width='1.2'/><path d='M4 5h6M4 7.5h6M4 10h4' stroke='currentColor' stroke-width='1.1' stroke-linecap='round'/></svg>",
+            var m when m.StartsWith("image/") =>
+                "<svg viewBox='0 0 14 14' fill='none'><rect x='1' y='1' width='12' height='12' rx='1' stroke='currentColor' stroke-width='1.2'/><circle cx='4.5' cy='4.5' r='1' stroke='currentColor' stroke-width='1'/><path d='M1 10l3-3 2 2 2-2.5 3 3.5' stroke='currentColor' stroke-width='1.1' stroke-linecap='round'/></svg>",
+            var m when m.StartsWith("video/") =>
+                "<svg viewBox='0 0 14 14' fill='none'><rect x='1' y='1' width='12' height='12' rx='1' stroke='currentColor' stroke-width='1.2'/><path d='M5 4.5l5 2.5-5 2.5V4.5z' stroke='currentColor' stroke-width='1.1'/></svg>",
+            _ =>
+                "<svg viewBox='0 0 14 14' fill='none'><rect x='1' y='1' width='12' height='12' rx='1' stroke='currentColor' stroke-width='1.2'/><path d='M4 5h6M4 7.5h6M4 10h4' stroke='currentColor' stroke-width='1.1' stroke-linecap='round'/></svg>"
+        });
+    };
+
+    // ERD-aligned models
+    private class TrainingDetail
+    {
+        public int TrainingId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public int TrainingDurationInDays { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public List<Material> Materials { get; set; } = new();
+        public List<Attendee> Attendees { get; set; } = new();
+    }
+
+    // ERD: Material entity
+    private class Material
+    {
+        public string OriginalFileName { get; set; } = string.Empty;
+        public string MimeType { get; set; } = string.Empty;
+        public long FileSize { get; set; }
+    }
+
+    // ERD: TrainingAttendee entity (Name, Email, Contact)
+    private class Attendee
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Contact { get; set; } = string.Empty;
+    }
+}

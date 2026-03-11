@@ -1,0 +1,223 @@
+﻿@page "/employee/dashboard"
+@layout EmployeeLayout
+
+<PageTitle>Dashboard | SitesPhil TMS</PageTitle>
+
+<div class="page-wrapper">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="page-eyebrow">
+                <span class="eyebrow-line"></span>
+                <span>OVERVIEW</span>
+            </div>
+            <h1 class="page-title">My Dashboard</h1>
+            <p class="page-subtitle">Your training summary at a glance</p>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-grid">
+        <!-- Enrolled Trainings -->
+        <div class="stat-card stat-primary">
+            <div class="stat-bg-glow"></div>
+            <div class="stat-icon-wrap red">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 4h12v10a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M8 4V2M12 4V2M4 8h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">@myTrainings.Count</span>
+                <span class="stat-label">Enrolled Trainings</span>
+            </div>
+            <div class="stat-corner">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4 20L20 4" stroke="rgba(224,37,26,0.15)" stroke-width="1" />
+                    <path d="M10 20L20 10" stroke="rgba(224,37,26,0.10)" stroke-width="1" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Total Materials Available -->
+        <div class="stat-card">
+            <div class="stat-icon-wrap">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="4" width="14" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M3 2h11l3 3v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path d="M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">@myTrainings.Sum(t => t.MaterialCount)</span>
+                <span class="stat-label">Total Materials</span>
+            </div>
+        </div>
+
+        <!-- Training Days -->
+        <div class="stat-card">
+            <div class="stat-icon-wrap">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M6 2v4M14 2v4M2 9h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">@myTrainings.Sum(t => t.TrainingDurationInDays)</span>
+                <span class="stat-label">Total Training Days</span>
+            </div>
+        </div>
+
+        <!-- Fellow Attendees -->
+        <div class="stat-card">
+            <div class="stat-icon-wrap">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M2 17c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path d="M15 8v4M17 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">@myTrainings.Sum(t => t.AttendeeCount)</span>
+                <span class="stat-label">Total Co-Attendees</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="content-row">
+
+        <!-- My Enrolled Trainings -->
+        <div class="content-panel">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span class="panel-accent"></span>
+                    <h2 class="panel-title">My Trainings</h2>
+                </div>
+                <a href="/employee/trainings" class="panel-link">View all →</a>
+            </div>
+
+            <div class="trainings-list">
+                @if (!myTrainings.Any())
+                {
+                    <div class="empty-state">
+                        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 8h24v20a4 4 0 01-4 4H12a4 4 0 01-4-4V8z" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M14 8V6M26 8V6M8 16h24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                        <p>You are not enrolled in any trainings yet.</p>
+                    </div>
+                }
+                @foreach (var t in myTrainings.Take(5))
+                {
+                    <div class="training-row" style="animation-delay: @(myTrainings.IndexOf(t) * 0.07)s">
+                        <div class="training-row-left">
+                            <span class="training-dot"></span>
+                            <div class="training-row-info">
+                                <span class="training-row-title">@t.Title</span>
+                                <span class="training-row-meta">
+                                    @t.TrainingDurationInDays day@(t.TrainingDurationInDays == 1 ? "" : "s") ·
+                                    @t.MaterialCount material@(t.MaterialCount == 1 ? "" : "s")
+                                </span>
+                            </div>
+                        </div>
+                        <div class="training-row-right">
+                            <span class="meta-badge mat-badge">
+                                <svg viewBox="0 0 12 12" fill="none"><rect x="1.5" y="2" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.2" /><path d="M4 5.5h4M4 7.5h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" /></svg>
+                                @t.MaterialCount
+                            </span>
+                            <a href="/employee/trainings/@t.TrainingId" class="row-btn">View →</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="side-column">
+
+            <!-- Duration Breakdown -->
+            <div class="content-panel">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <span class="panel-accent"></span>
+                        <h2 class="panel-title">Duration Breakdown</h2>
+                    </div>
+                </div>
+                <div class="category-list">
+                    @{
+                        var oneDay = myTrainings.Count(t => t.TrainingDurationInDays == 1);
+                        var twoThree = myTrainings.Count(t => t.TrainingDurationInDays >= 2 && t.TrainingDurationInDays <= 3);
+                        var fourPlus = myTrainings.Count(t => t.TrainingDurationInDays >= 4);
+                        var maxCat = Math.Max(1, new[] { oneDay, twoThree, fourPlus }.Max());
+                    }
+                    <div class="category-row">
+                        <span class="category-name">1 Day</span>
+                        <div class="category-bar-track">
+                            <div class="category-bar-fill" style="width:@(oneDay * 100 / maxCat)%"></div>
+                        </div>
+                        <span class="category-count">@oneDay</span>
+                    </div>
+                    <div class="category-row">
+                        <span class="category-name">2–3 Days</span>
+                        <div class="category-bar-track">
+                            <div class="category-bar-fill" style="width:@(twoThree * 100 / maxCat)%"></div>
+                        </div>
+                        <span class="category-count">@twoThree</span>
+                    </div>
+                    <div class="category-row">
+                        <span class="category-name">4+ Days</span>
+                        <div class="category-bar-track">
+                            <div class="category-bar-fill" style="width:@(fourPlus * 100 / maxCat)%"></div>
+                        </div>
+                        <span class="category-count">@fourPlus</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="content-panel" style="margin-top:14px;">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <span class="panel-accent"></span>
+                        <h2 class="panel-title">Quick Access</h2>
+                    </div>
+                </div>
+                <div class="quick-actions-grid">
+                    <a href="/employee/trainings" class="action-card action-primary">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4 4h12v10a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" stroke="currentColor" stroke-width="1.5" />
+                                <path d="M8 4V2M12 4V2M4 8h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            </svg>
+                        </div>
+                        <span class="action-label">Browse Trainings</span>
+                        <span class="action-arrow">›</span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private List<TrainingItem> myTrainings = new()
+    {
+        new() { TrainingId = 1, Title = "Workplace Safety Orientation",   TrainingDurationInDays = 1, MaterialCount = 4, AttendeeCount = 12 },
+        new() { TrainingId = 2, Title = "Fire Safety & Emergency Response", TrainingDurationInDays = 2, MaterialCount = 3, AttendeeCount = 18 },
+        new() { TrainingId = 3, Title = "Construction Site Protocols",     TrainingDurationInDays = 3, MaterialCount = 6, AttendeeCount = 10 },
+    };
+
+    private class TrainingItem
+    {
+        public int TrainingId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public int TrainingDurationInDays { get; set; }
+        public int MaterialCount { get; set; }
+        public int AttendeeCount { get; set; }
+    }
+}

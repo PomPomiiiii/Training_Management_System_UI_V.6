@@ -1,0 +1,276 @@
+﻿@inject TrainingService TrainingService
+@inject NavigationManager Nav
+@using Training_Management_System_UI.Models.Training
+@using Training_Management_System_UI.Services
+
+@page "/admin/dashboard"
+@layout AdminLayout
+
+<PageTitle>Dashboard | SitesPhil TMS</PageTitle>
+
+<div class="page-wrapper">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="page-eyebrow">
+                <span class="eyebrow-line"></span>
+                <span>OVERVIEW</span>
+            </div>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Training activities at a glance</p>
+        </div>
+        <a href="/admin/create-training" class="btn-primary">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" />
+                <path d="M10 6v8M6 10h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            Create Training
+        </a>
+    </div>
+
+    @if (isLoading)
+    {
+        <p style="color: var(--clr-text-ghost); padding: 20px;">Loading...</p>
+    }
+    else
+    {
+        <!-- Stats Row -->
+        <div class="stats-grid">
+            <div class="stat-card stat-primary">
+                <div class="stat-bg-glow"></div>
+                <div class="stat-icon-wrap red">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 4h12v10a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M8 4V2M12 4V2M4 8h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value">@trainings.Count(t => !t.Disabled)</span>
+                    <span class="stat-label">Active Trainings</span>
+                </div>
+                <div class="stat-corner">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M4 20L20 4" stroke="rgba(224,37,26,0.15)" stroke-width="1" /><path d="M10 20L20 10" stroke="rgba(224,37,26,0.1)" stroke-width="1" /></svg>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrap">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="4" width="14" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M3 2h11l3 3v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value">@trainings.Sum(t => t.MaterialResponse.Count)</span>
+                    <span class="stat-label">Total Materials</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrap">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M2 17c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M15 8v4M17 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value">@trainings.Sum(t => t.AttendeeResponse.Count)</span>
+                    <span class="stat-label">Total Attendees</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrap">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M6.5 10h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value">@trainings.Count(t => t.Disabled)</span>
+                    <span class="stat-label">Disabled</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Two column layout -->
+        <div class="content-row">
+
+            <!-- Recent Trainings -->
+            <div class="content-panel panel-wide">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <span class="panel-accent"></span>
+                        <h2 class="panel-title">Recent Trainings</h2>
+                    </div>
+                    <a href="/admin/manage-trainings" class="panel-link">View all →</a>
+                </div>
+
+                <div class="trainings-list">
+                    @foreach (var training in trainings.Take(5))
+                    {
+                        var trainingId = training.TrainingId;
+                        var trainingUrl = "/admin/trainings/" + trainingId;
+                        <div class="training-row"
+                             style="animation-delay: @(trainings.IndexOf(training) * 0.07)s; cursor: pointer;"
+                             @onclick="() => Nav.NavigateTo(trainingUrl)">
+                            <div class="training-row-left">
+                                <span class="training-category-dot @(training.Disabled ? "dot-disabled" : "")"></span>
+                                <div class="training-row-info">
+                                    <span class="training-row-title @(training.Disabled ? "title-disabled" : "")">@training.Title</span>
+                                    <span class="training-row-meta">
+                                        @training.TrainingDurationInDays day@(training.TrainingDurationInDays == 1 ? "" : "s") ·
+                                        Created @training.CreatedAt.ToString("MMM d, yyyy")
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="training-row-right">
+                                <span class="meta-badge mat-badge" title="Materials">
+                                    <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" width="10" height="10">
+                                        <rect x="1" y="1.5" width="8" height="9" rx="1" stroke="currentColor" stroke-width="1.1" />
+                                        <path d="M3 5.5h4M3 7.5h2.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" />
+                                        <path d="M4 .5h5a1 1 0 011 1v8.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" />
+                                    </svg>
+                                    @training.MaterialResponse.Count
+                                </span>
+                                <span class="meta-badge att-badge" title="Attendees">
+                                    <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" width="10" height="10">
+                                        <circle cx="5" cy="3.5" r="2" stroke="currentColor" stroke-width="1.1" />
+                                        <path d="M1 10.5c0-2.21 1.79-3.5 4-3.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" />
+                                        <path d="M9 7v3M7.5 8.5h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" />
+                                    </svg>
+                                    @training.AttendeeResponse.Count
+                                </span>
+                                <span class="status-pill @(training.Disabled ? "disabled" : "active")">
+                                    @(training.Disabled ? "Disabled" : "Active")
+                                </span>
+                                
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="content-panel panel-narrow">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <span class="panel-accent"></span>
+                        <h2 class="panel-title">Quick Actions</h2>
+                    </div>
+                </div>
+
+                <div class="quick-actions-grid">
+                    <a href="/admin/create-training" class="action-card action-primary">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" />
+                                <path d="M10 6v8M6 10h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            </svg>
+                        </div>
+                        <span class="action-label">New Training</span>
+                        <span class="action-arrow">→</span>
+                    </a>
+
+                    <a href="/admin/users" class="action-card">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.5" />
+                                <path d="M2 17c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                <path d="M15 8v4M17 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            </svg>
+                        </div>
+                        <span class="action-label">Add User</span>
+                        <span class="action-arrow">→</span>
+                    </a>
+
+                    <a href="/admin/manage-trainings" class="action-card">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 5h14M3 10h14M3 15h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            </svg>
+                        </div>
+                        <span class="action-label">All Trainings</span>
+                        <span class="action-arrow">→</span>
+                    </a>
+                </div>
+
+                <!-- Duration Breakdown -->
+                <div class="panel-header" style="margin-top: 24px;">
+                    <div class="panel-title-group">
+                        <span class="panel-accent"></span>
+                        <h2 class="panel-title">Duration Breakdown</h2>
+                    </div>
+                </div>
+                <div class="category-list">
+                    @{
+                        var durationGroups = trainings
+                        .Where(t => !t.Disabled)
+                        .GroupBy(t => t.TrainingDurationInDays == 1 ? "1 Day" :
+                        t.TrainingDurationInDays <= 3 ? "2–3 Days" : "4+ Days")
+                        .OrderByDescending(g => g.Count())
+                        .ToList();
+                        var maxCount = durationGroups.Any() ? durationGroups.Max(g => g.Count()) : 1;
+                    }
+                    @foreach (var grp in durationGroups)
+                    {
+                        var pct = (int)((double)grp.Count() / Math.Max(1, maxCount) * 100);
+                        <div class="category-row">
+                            <span class="category-name">@grp.Key</span>
+                            <div class="category-bar-track">
+                                <div class="category-bar-fill" style="width: @pct%"></div>
+                            </div>
+                            <span class="category-count">@grp.Count()</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Users summary -->
+                <div class="panel-header" style="margin-top: 20px;">
+                    <div class="panel-title-group">
+                        <span class="panel-accent"></span>
+                        <h2 class="panel-title">Users</h2>
+                    </div>
+                    <a href="/admin/users" class="panel-link">Manage →</a>
+                </div>
+                <div class="users-summary">
+                    <div class="user-summary-row">
+                        <span class="role-dot admin-dot"></span>
+                        <span class="role-name">Admin</span>
+                        <span class="role-count">—</span>
+                    </div>
+                    <div class="user-summary-row">
+                        <span class="role-dot trainer-dot"></span>
+                        <span class="role-name">Trainer</span>
+                        <span class="role-count">—</span>
+                    </div>
+                    <div class="user-summary-row">
+                        <span class="role-dot employee-dot"></span>
+                        <span class="role-name">Employee</span>
+                        <span class="role-count">—</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    }
+</div>
+
+@code {
+    private List<TrainingResponse> trainings = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        trainings = await TrainingService.GetAllTrainingsAsync();
+        isLoading = false;
+    }
+
+    private void DeleteTraining(Guid id)
+    {
+        trainings.RemoveAll(t => t.TrainingId == id);
+    }
+}

@@ -1,0 +1,192 @@
+﻿@inject AuthService AuthService
+@inject NavigationManager Nav
+@inject UserSessionService UserSessionService // FOR MANAGING USER ROLE
+@using Training_Management_System_UI.Models.Auth
+@using Training_Management_System_UI.Services
+
+@page "/login"
+@using Microsoft.AspNetCore.Components.Forms
+
+<PageTitle>Login | SitesPhil Training</PageTitle>
+
+<div class="background-overlay"></div>
+<div class="scanlines"></div>
+
+<div class="login-container">
+    <div class="login-card">
+
+        <div class="brand-header">
+            <div class="brand-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="20,2 38,12 38,28 20,38 2,28 2,12" stroke="#E0251A" stroke-width="2" fill="none" />
+                        <polygon points="20,8 32,15 32,25 20,32 8,25 8,15" fill="#E0251A" opacity="0.3" />
+                        <line x1="20" y1="2" x2="20" y2="38" stroke="#E0251A" stroke-width="1" opacity="0.5" />
+                        <line x1="2" y1="20" x2="38" y2="20" stroke="#E0251A" stroke-width="1" opacity="0.5" />
+                    </svg>
+                </div>
+                <span class="logo-text">SITESPHIL</span>
+            </div>
+            <div class="brand-divider"></div>
+            <h1 class="brand-title">Training Management System</h1>
+            <p class="brand-subtitle">Sign in to continue</p>
+        </div>
+
+        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+
+            <div class="input-group">
+                <label for="email">Email</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M3 7l7 5 7-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </span>
+                    <InputText id="email"
+                               @bind-Value="loginModel.Email"
+                               type="email"
+                               placeholder="Enter your email"
+                               class="form-input" />
+                </div>
+                <ValidationMessage For="@(() => loginModel.Email)" class="validation-msg" />
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="4" y="9" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M7 9V6a3 3 0 016 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            <circle cx="10" cy="13.5" r="1" fill="currentColor" />
+                        </svg>
+                    </span>
+                    <InputText id="password"
+                               @bind-Value="loginModel.Password"
+                               type="@passwordInputType"
+                               placeholder="Enter your password"
+                               class="form-input" />
+                    <button type="button" class="toggle-password" @onclick="TogglePasswordVisibility">
+                        @if (showPassword)
+                        {
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 3l14 14M10 4C5.5 4 2 10 2 10s1.5 2.5 4 4M14.5 14.5C16.5 13 18 10 18 10s-3.5-6-8-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2 10s3.5-6 8-6 8 6 8 6-3.5 6-8 6-8-6-8-6z" stroke="currentColor" stroke-width="1.5" />
+                                <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5" />
+                            </svg>
+                        }
+                    </button>
+                </div>
+                <ValidationMessage For="@(() => loginModel.Password)" class="validation-msg" />
+            </div>
+
+            <div class="form-options">
+                <a href="#" class="forgot">Forgot password?</a>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error-banner">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M10 6v4M10 14h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                    @errorMessage
+                </div>
+            }
+
+            <button type="submit" class="login-btn" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner"></span>
+                    <span>Authenticating...</span>
+                }
+                else
+                {
+                    <span>LOGIN</span>
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                }
+            </button>
+        </EditForm>
+
+        <div class="card-footer">
+            <span class="footer-tag">SECURE ACCESS</span>
+            <span class="footer-divider">•</span>
+            <span class="footer-tag">SITESPHIL &copy; @DateTime.Now.Year</span>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private bool isLoading = false;
+    private bool showPassword = false;
+    private string passwordInputType = "password";
+    private string errorMessage = string.Empty;
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        StateHasChanged();
+
+        var request = new AuthRequest
+        {
+            Email = loginModel.Email,
+            Password = loginModel.Password
+        };
+
+        var result = await AuthService.LoginAsync(request);
+
+        if (result.IsSuccess)
+        {
+            // Load user session after login
+            var loaded = await UserSessionService.LoadSessionAsync();
+
+            if (loaded)
+            {
+                if (UserSessionService.Role == "Admin")
+                    Nav.NavigateTo("/admin/dashboard");
+                else
+                    Nav.NavigateTo("/employee/dashboard");
+            }
+            else
+            {
+                errorMessage = "Session could not be loaded. Please try again.";
+            }
+        }
+        else
+        {
+            errorMessage = result.Message;
+        }
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+        passwordInputType = showPassword ? "text" : "password";
+    }
+
+    public class LoginModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Email is required")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Enter a valid email")]
+        public string Email { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Password is required")]
+        [System.ComponentModel.DataAnnotations.MinLength(6, ErrorMessage = "Minimum 6 characters")]
+        public string Password { get; set; } = string.Empty;
+    }
+}

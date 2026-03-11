@@ -1,0 +1,443 @@
+/* ===============================
+   SITESPHIL TMS — app.css
+   Global styles for Blazor WASM
+================================= */
+
+/* ================================================
+   TMS DESIGN TOKENS
+   Single source of truth for all colors, fonts,
+   spacing, and transitions across admin + employee.
+   !! Keep this block at the TOP of app.css !!
+================================================= */
+
+:root {
+    /* ── Brand accent ── */
+    --clr-accent: #E0251A;
+    --clr-accent-dark: #b01a11;
+    --clr-accent-glow: rgba(224, 37, 26, 0.30);
+    --clr-accent-subtle: rgba(224, 37, 26, 0.06);
+    --clr-accent-border: rgba(224, 37, 26, 0.18);
+    --clr-accent-border-md: rgba(224, 37, 26, 0.25);
+    /* ── Backgrounds & surfaces ── */
+    --clr-bg: #0a0a0a;
+    --clr-bg-surface: #181818; /* card/option dropdown bg */
+    --clr-surface-0: rgba(255, 255, 255, 0.02);
+    --clr-surface-1: rgba(255, 255, 255, 0.03);
+    --clr-surface-2: rgba(255, 255, 255, 0.05);
+    --clr-surface-hover: rgba(255, 255, 255, 0.06);
+    /* ── Borders ── */
+    --clr-border: rgba(255, 255, 255, 0.06);
+    --clr-border-md: rgba(255, 255, 255, 0.10);
+    /* ── Text ── */
+    --clr-text-primary: #ffffff;
+    --clr-text-secondary: #cccccc;
+    --clr-text-muted: #888888;
+    --clr-text-dim: #555555;
+    --clr-text-ghost: #3a3a3a;
+    /* ── Utility ── */
+    --clr-white: #ffffff;
+    --clr-disabled: #333333;
+    --clr-error: #ff4a3d;
+    /* ── Status ── */
+    --clr-green: #22c55e;
+    --clr-green-dot: #22c55e;
+    --clr-green-subtle: rgba(34, 197, 94, 0.08);
+    --clr-blue: #3b82f6;
+    --clr-blue-subtle: rgba(59, 130, 246, 0.08);
+    --clr-purple: #a855f7;
+    --clr-purple-subtle: rgba(168, 85, 247, 0.08);
+    --clr-amber: #f59e0b;
+    --clr-amber-dot: #f59e0b;
+    --clr-amber-subtle: rgba(245, 158, 11, 0.10);
+    /* ── Typography ── */
+    --font-condensed: 'Barlow Condensed', sans-serif;
+    --font-body: 'Barlow', sans-serif;
+    /* ── Border radius ── */
+    --radius-sm: 2px;
+    --radius-md: 3px;
+    --radius-lg: 4px;
+    /* ── Transitions ── */
+    --transition-fast: 0.15s ease;
+    --transition-base: 0.2s ease;
+    --transition-slow: 0.25s ease;
+    /* ── Shadows ── */
+    --shadow-accent: 0 4px 18px rgba(224, 37, 26, 0.30), inset 0 1px 0 rgba(255,255,255,0.10);
+    --shadow-accent-hover: 0 8px 28px rgba(224, 37, 26, 0.45);
+}
+
+
+/* ---- BLAZOR DEFAULTS (keep these) ---- */
+
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid #26b050;
+}
+
+.invalid {
+    outline: 1px solid var(--clr-error);
+}
+
+#blazor-error-ui {
+    color-scheme: light only;
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
+
+.blazor-error-boundary {
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+    .blazor-error-boundary::after {
+        content: "An error has occurred.";
+    }
+
+.loading-progress {
+    position: relative;
+    display: block;
+    width: 8rem;
+    height: 8rem;
+    margin: 20vh auto 1rem auto;
+}
+
+    .loading-progress circle {
+        fill: none;
+        stroke: #e0e0e0;
+        stroke-width: 0.6rem;
+        transform-origin: 50% 50%;
+        transform: rotate(-90deg);
+    }
+
+        .loading-progress circle:last-child {
+            stroke: #1b6ec2;
+            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+            transition: stroke-dasharray 0.05s ease-in-out;
+        }
+
+.loading-progress-text {
+    position: absolute;
+    text-align: center;
+    font-weight: bold;
+    inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
+}
+
+    .loading-progress-text:after {
+        content: var(--blazor-load-percentage-text, "Loading");
+    }
+
+code {
+    color: #c02d76;
+}
+
+.form-floating > .form-control-plaintext::placeholder,
+.form-floating > .form-control::placeholder {
+    color: var(--bs-secondary-color);
+    text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder,
+.form-floating > .form-control:focus::placeholder {
+    text-align: start;
+}
+
+/* ===============================
+   GLOBAL RESET
+================================= */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--clr-bg);
+    font-family: var(--font-body);
+}
+
+/* ===============================
+   ADMIN SIDEBAR NAV — GLOBAL FIX
+   Blazor NavLink renders as <a>;
+   scoped CSS cannot reach it.
+================================= */
+
+a.nav-item,
+button.nav-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 9px 12px !important;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    color: var(--clr-text-dim) !important;
+    text-decoration: none !important;
+    border: none;
+    border-left: 2px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+    font-family: var(--font-body);
+    box-sizing: border-box;
+    white-space: nowrap;
+    line-height: 1;
+    transition: color var(--transition-fast), background var(--transition-fast), border-left-color var(--transition-fast);
+}
+
+    a.nav-item:hover,
+    button.nav-item:hover {
+        color: var(--clr-text-muted) !important;
+        background: var(--clr-surface-1) !important;
+        border-left-color: var(--clr-accent-border-md) !important;
+        text-decoration: none !important;
+    }
+
+    a.nav-item.nav-item-active {
+        color: var(--clr-text-primary) !important;
+        background: var(--clr-accent-subtle) !important;
+        border-left-color: var(--clr-accent) !important;
+    }
+
+        a.nav-item.nav-item-active .nav-icon {
+            color: var(--clr-accent) !important;
+        }
+
+/* ===============================
+   EMPLOYEE SIDEBAR NAV — GLOBAL FIX
+================================= */
+
+a.emp-nav-item,
+button.emp-nav-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 9px 10px !important;
+    border-radius: var(--radius-md);
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: #484848 !important;
+    -webkit-text-fill-color: #484848 !important;
+    text-decoration: none !important;
+    border: none;
+    border-left: 2px solid transparent;
+    background: transparent !important;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-body);
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    line-height: 1;
+    transition: color var(--transition-fast), background var(--transition-fast), border-left-color var(--transition-fast);
+}
+
+    a.emp-nav-item:link,
+    a.emp-nav-item:visited {
+        color: #484848 !important;
+        -webkit-text-fill-color: #484848 !important;
+        text-decoration: none !important;
+    }
+
+    a.emp-nav-item:hover,
+    button.emp-nav-item:hover {
+        color: var(--clr-text-muted) !important;
+        -webkit-text-fill-color: var(--clr-text-muted) !important;
+        background: var(--clr-surface-1) !important;
+        border-left-color: var(--clr-accent-border) !important;
+        text-decoration: none !important;
+    }
+
+    a.emp-nav-item.emp-nav-item-active,
+    a.emp-nav-item.emp-nav-item-active:link,
+    a.emp-nav-item.emp-nav-item-active:visited {
+        color: var(--clr-text-primary) !important;
+        -webkit-text-fill-color: var(--clr-text-primary) !important;
+        background: var(--clr-accent-subtle) !important;
+        border-left-color: var(--clr-accent) !important;
+        text-decoration: none !important;
+    }
+
+        a.emp-nav-item.emp-nav-item-active .emp-nav-icon {
+            color: var(--clr-accent) !important;
+        }
+
+    button.emp-nav-item.emp-logout-btn {
+        color: var(--clr-text-ghost) !important;
+        -webkit-text-fill-color: var(--clr-text-ghost) !important;
+        margin: 4px 8px 0 !important;
+        width: calc(100% - 16px) !important;
+    }
+
+        button.emp-nav-item.emp-logout-btn:hover {
+            color: var(--clr-accent) !important;
+            -webkit-text-fill-color: var(--clr-accent) !important;
+            background: var(--clr-accent-subtle) !important;
+            border-left-color: var(--clr-accent-border) !important;
+        }
+
+/* ===============================
+   FORM INPUTS — DARK THEME
+   Blazor InputText/Select/Textarea
+   scoped CSS loses to UA styles.
+================================= */
+
+input.form-input,
+select.form-input,
+textarea.form-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 14px;
+    background: var(--clr-surface-1) !important;
+    border: 1px solid var(--clr-border-md) !important;
+    border-radius: var(--radius-md);
+    color: var(--clr-text-secondary) !important;
+    font-family: var(--font-body);
+    font-size: 13px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color var(--transition-base), background var(--transition-base);
+}
+
+    input.form-input::placeholder,
+    textarea.form-input::placeholder {
+        color: var(--clr-text-ghost) !important;
+        opacity: 1;
+    }
+
+    input.form-input:focus,
+    select.form-input:focus,
+    textarea.form-input:focus {
+        background: var(--clr-surface-hover) !important;
+        border-color: var(--clr-accent) !important;
+        box-shadow: 0 0 0 3px var(--clr-accent-subtle);
+        color: var(--clr-text-primary) !important;
+        outline: none;
+    }
+
+    input.form-input:-webkit-autofill,
+    input.form-input:-webkit-autofill:hover,
+    input.form-input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0px 1000px #141414 inset !important;
+        -webkit-text-fill-color: var(--clr-text-secondary) !important;
+        caret-color: var(--clr-accent);
+    }
+
+.login-card input.form-input {
+    padding: 13px 44px 13px 42px !important;
+}
+
+select.form-input {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%23555' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    background-size: 14px !important;
+    padding-right: 34px !important;
+    cursor: pointer;
+}
+
+    select.form-input option {
+        background: var(--clr-bg-surface);
+        color: var(--clr-text-secondary);
+    }
+
+input.search-input {
+    background: var(--clr-surface-1) !important;
+    border: 1px solid var(--clr-border-md) !important;
+    color: var(--clr-text-secondary) !important;
+    outline: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+}
+
+    input.search-input::placeholder {
+        color: var(--clr-text-ghost) !important;
+    }
+
+    input.search-input:focus {
+        border-color: var(--clr-accent) !important;
+        outline: none;
+    }
+
+select.filter-select {
+    background-color: var(--clr-surface-1) !important;
+    border: 1px solid var(--clr-border-md) !important;
+    color: var(--clr-text-muted) !important;
+    -webkit-appearance: none;
+    outline: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%23555' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    background-size: 14px !important;
+}
+
+    select.filter-select:focus {
+        border-color: var(--clr-accent) !important;
+        outline: none;
+    }
+
+    select.filter-select option {
+        background: var(--clr-bg-surface);
+        color: var(--clr-text-secondary);
+    }
+
+/* ===============================
+   VALIDATION MESSAGES
+================================= */
+
+.validation-message,
+.validation-msg {
+    font-size: 11px !important;
+    color: var(--clr-error) !important;
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+    display: block;
+    text-shadow: 0 0 8px rgba(255, 59, 47, 0.6), 0 0 16px rgba(255, 59, 47, 0.3) !important;
+}
+
+input.form-input.modified.invalid,
+select.form-input.modified.invalid,
+textarea.form-input.modified.invalid {
+    border-color: var(--clr-error) !important;
+    box-shadow: 0 0 0 3px rgba(255, 59, 47, 0.1);
+}
+
+/*REMOVE WEB DESIGNS*/
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    margin: 0 !important;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
+}
+
+#file-input {
+    display: none !important;
+}

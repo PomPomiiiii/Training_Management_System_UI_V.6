@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../../../Connect/TrainingManagementSystem-main/TrainingManagementSystem-main/TrainingManagementSystem.Api/TrainingManagementSystem.Api.csproj" />
+  <Project Path="Training_Management_System_UI/Training_Management_System_UI.csproj" />
+</Solution>

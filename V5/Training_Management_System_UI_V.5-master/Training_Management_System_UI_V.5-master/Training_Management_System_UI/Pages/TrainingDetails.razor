@@ -1,0 +1,749 @@
+﻿@inject TrainingService TrainingService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@using Training_Management_System_UI.Models.Training
+@using Training_Management_System_UI.Services
+@using Microsoft.AspNetCore.Components.Forms
+
+@page "/admin/trainings/{TrainingId:guid}"
+@layout AdminLayout
+
+<PageTitle>Training Detail | SitesPhil TMS</PageTitle>
+
+<div class="page-wrapper">
+
+    @if (isLoading)
+    {
+        <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <span>Loading training...</span>
+        </div>
+    }
+    else if (training is null)
+    {
+        <div class="not-found">
+            <span class="nf-code">404</span>
+            <p>Training not found.</p>
+            <a href="/admin/manage-trainings" class="btn-back">Back to Trainings</a>
+        </div>
+    }
+    else
+    {
+        <div class="page-header">
+            <div class="header-left">
+                <a href="/admin/manage-trainings" class="breadcrumb-back">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Manage Trainings
+                </a>
+                <div class="page-eyebrow">
+                    <span class="eyebrow-line"></span>
+                    <span>TRAINING DETAIL</span>
+                </div>
+                <h1 class="page-title">@training.Title</h1>
+                <div class="title-meta">
+                    <span class="status-chip @(training.Disabled ? "chip-disabled" : "chip-active")">
+                        <span class="chip-dot"></span>
+                        @(training.Disabled ? "Disabled" : "Active")
+                    </span>
+                    <span class="meta-sep">·</span>
+                    <span class="meta-text">Created @training.CreatedAt.ToString("MMMM d, yyyy")</span>
+                    <span class="meta-sep">·</span>
+                    <span class="meta-text">@training.TrainingDurationInDays day@(training.TrainingDurationInDays == 1 ? "" : "s")</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-secondary" @onclick="ToggleDisabled">
+                    @if (training.Disabled)
+                    {
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M10 6v8M6 10h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                        <span>Enable</span>
+                    }
+                    else
+                    {
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M6.5 10h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                        <span>Disable</span>
+                    }
+                </button>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="toast toast-success">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M6.5 10l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                @successMessage
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="toast toast-error">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M10 6v4M10 14h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+                @errorMessage
+            </div>
+        }
+
+        <div class="tab-nav">
+            <button class="tab-btn @(activeTab == "overview" ? "tab-active" : "")" @onclick='() => SetTab("overview")'>
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" />
+                    <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" />
+                    <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" />
+                    <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" />
+                </svg>
+                Overview
+            </button>
+            <button class="tab-btn @(activeTab == "edit" ? "tab-active" : "")" @onclick='() => SetTab("edit")'>
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 11.5V14h2.5l7-7L9 4.5l-7 7zM13.5 3l-.5-.5a1.41 1.41 0 00-2 0l-1 1 2.5 2.5 1-1a1.41 1.41 0 000-2z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Edit
+            </button>
+            <button class="tab-btn @(activeTab == "materials" ? "tab-active" : "")" @onclick='() => SetTab("materials")'>
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="2" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.3" />
+                    <path d="M4 6h5M4 9h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                    <path d="M6 1h7a1 1 0 011 1v11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                </svg>
+                Materials
+                <span class="tab-count">@training.MaterialResponse.Count</span>
+            </button>
+            <button class="tab-btn @(activeTab == "attendees" ? "tab-active" : "")" @onclick='() => SetTab("attendees")'>
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="6" cy="5" r="3" stroke="currentColor" stroke-width="1.3" />
+                    <path d="M1 14c0-2.761 2.239-4 5-4s5 1.239 5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                    <path d="M12 7v4M14 9h-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                </svg>
+                Attendees
+                <span class="tab-count">@training.AttendeeResponse.Count</span>
+            </button>
+        </div>
+
+        @if (activeTab == "overview")
+        {
+            <div class="tab-content">
+                <div class="overview-grid">
+                    <div class="ov-stats-row">
+                        <div class="ov-stat">
+                            <span class="ov-stat-value">@training.TrainingDurationInDays</span>
+                            <span class="ov-stat-label">Day@(training.TrainingDurationInDays == 1 ? "" : "s") Duration</span>
+                        </div>
+                        <div class="ov-stat">
+                            <span class="ov-stat-value">@training.MaterialResponse.Count</span>
+                            <span class="ov-stat-label">Materials</span>
+                        </div>
+                        <div class="ov-stat">
+                            <span class="ov-stat-value">@training.AttendeeResponse.Count</span>
+                            <span class="ov-stat-label">Attendees</span>
+                        </div>
+                        <div class="ov-stat">
+                            <span class="ov-stat-value @(training.Disabled ? "val-disabled" : "val-active")">
+                                @(training.Disabled ? "Off" : "On")
+                            </span>
+                            <span class="ov-stat-label">Status</span>
+                        </div>
+                    </div>
+                    <div class="detail-panel">
+                        <div class="dp-header">
+                            <span class="panel-accent"></span>
+                            <h2 class="dp-title">Description</h2>
+                        </div>
+                        <div class="dp-body">
+                            @if (string.IsNullOrWhiteSpace(training.Description))
+                            {
+                                <span class="empty-text">No description provided.</span>
+                            }
+                            else
+                            {
+                                <p class="desc-text">@training.Description</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (activeTab == "edit")
+        {
+            <div class="tab-content">
+                <div class="detail-panel">
+                    <div class="dp-header">
+                        <span class="panel-accent"></span>
+                        <h2 class="dp-title">Edit Training</h2>
+                    </div>
+                    <div class="dp-body">
+                        <div class="edit-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Title</label>
+                                    <input type="text" class="form-input" @bind="editTitle" placeholder="Training title" />
+                                </div>
+                                <div class="form-group form-group-sm">
+                                    <label class="form-label">Duration (days)</label>
+                                    <input type="number" class="form-input" @bind="editDuration" min="1" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-input form-textarea" @bind="editDescription" placeholder="Describe this training program..."></textarea>
+                            </div>
+                            @if (!string.IsNullOrEmpty(editValidation))
+                            {
+                                <span class="validation-msg">@editValidation</span>
+                            }
+                            <div class="form-actions">
+                                <button class="btn-primary" @onclick="SaveEdit" disabled="@isSaving">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner"></span>
+                                        <span>Saving...</span>
+                                    }
+                                    else
+                                    {
+                                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                        <span>Save Changes</span>
+                                    }
+                                </button>
+                                <button class="btn-ghost" @onclick="ResetEdit">Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (activeTab == "materials")
+        {
+            <div class="tab-content">
+                <div class="detail-panel">
+                    <div class="dp-header">
+                        <span class="panel-accent"></span>
+                        <h2 class="dp-title">Materials</h2>
+                        <span class="dp-count">@training.MaterialResponse.Count total</span>
+                        <button class="dp-add-btn" @onclick="() => showAddMaterial = !showAddMaterial">
+                            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
+                                <path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                            </svg>
+                            Add Material
+                        </button>
+                    </div>
+
+                    @if (showAddMaterial)
+                    {
+                        <div class="inline-form">
+                            <div class="inline-form-header">
+                                <span>Upload Files</span>
+                                <button class="inline-close" @onclick="() => { showAddMaterial = false; stagedFiles.Clear(); matValidation = string.Empty; }">×</button>
+                            </div>
+                            <div class="inline-form-body">
+
+                                <InputFile @ref="fileInput" OnChange="OnFilesSelected" multiple accept="*/*" id="mat-file-input" style="display:none !important;" />
+
+                                <div class="file-drop-zone" @onclick="TriggerFilePicker">
+                                    <div class="dz-icon">
+                                        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M20 6v18M13 13l7-7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                            <path d="M6 30h28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.4" />
+                                            <path d="M6 34h28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.2" />
+                                        </svg>
+                                    </div>
+                                    <div class="dz-text">
+                                        <span class="drop-main">Click to select files</span>
+                                        <span class="drop-sub">Any file type · Max 10MB each</span>
+                                    </div>
+                                </div>
+
+                                @if (stagedFiles.Any())
+                                {
+                                    <div class="staged-files">
+                                        @foreach (var f in stagedFiles.ToList())
+                                        {
+                                            var file = f;
+                                            <div class="staged-file-row">
+                                                <div class="staged-type-badge @GetFileTypeCss(file.Name)">
+                                                    @GetFileTypeLabel(file.Name)
+                                                </div>
+                                                <div class="staged-info">
+                                                    <span class="staged-name">@file.Name</span>
+                                                    <span class="staged-size">@FormatFileSize(file.Size)</span>
+                                                </div>
+                                                <button class="staged-remove" @onclick="() => stagedFiles.Remove(file)">×</button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(matValidation))
+                                {
+                                    <span class="validation-msg">@matValidation</span>
+                                }
+
+                                <div class="inline-form-actions">
+                                    <button class="btn-primary" @onclick="UploadMaterials" disabled="@isUploadingMat">
+                                        @if (isUploadingMat)
+                                        {
+                                            <span class="spinner"></span>
+                                            <span>Uploading...</span>
+                                        }
+                                        else
+                                        {
+                                            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M8 2v8M5 4l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                                                <path d="M2 12h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                                            </svg>
+                                            <span>Upload @(stagedFiles.Count > 0 ? stagedFiles.Count + " File" + (stagedFiles.Count > 1 ? "s" : "") : "Files")</span>
+                                        }
+                                    </button>
+                                    <button class="btn-ghost" @onclick="() => { showAddMaterial = false; stagedFiles.Clear(); matValidation = string.Empty; }">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="dp-body">
+                        @if (!training.MaterialResponse.Any())
+                        {
+                            <div class="empty-section">
+                                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="6" y="8" width="22" height="28" rx="2" stroke="rgba(224,37,26,0.4)" stroke-width="1.5" />
+                                    <path d="M12 18h10M12 23h7" stroke="rgba(224,37,26,0.4)" stroke-width="1.5" stroke-linecap="round" />
+                                    <path d="M11 5h16a2 2 0 012 2v26" stroke="rgba(224,37,26,0.2)" stroke-width="1.5" stroke-linecap="round" />
+                                </svg>
+                                <span>No materials added yet.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="items-list">
+                                @foreach (var mat in training.MaterialResponse)
+                                {
+                                    <div class="item-row">
+                                        <div class="item-icon-wrap @GetMatIconCss(mat.FileName)">
+                                            <span class="mat-type-label">@GetMatTypeLabel(mat.FileName)</span>
+                                        </div>
+                                        <div class="item-info">
+                                            <span class="item-name">@mat.FileName</span>
+                                            <span class="item-sub">
+                                                @mat.MimeType
+                                                @if (mat.Size > 0)
+                                                {
+                                                    @(" · " + FormatFileSize(mat.Size))
+                                                }
+                                                @if (mat.IsExternalLink)
+                                                {
+                                                    <span class="ext-badge">External Link</span>
+                                                }
+                                            </span>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(mat.Url))
+                                        {
+                                            <a href="@mat.Url" target="_blank" class="item-link-btn">
+                                                @if (mat.IsExternalLink)
+                                                {
+                                                    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M7 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1V9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                                                        <path d="M10 2h4v4M14 2L8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                                                    </svg>
+                                                    <span>Open</span>
+                                                }
+                                                else
+                                                {
+                                                    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                                                        <path d="M3 12h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                                                    </svg>
+                                                    <span>Download</span>
+                                                }
+                                            </a>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (activeTab == "attendees")
+        {
+            <div class="tab-content">
+                <div class="detail-panel">
+                    <div class="dp-header">
+                        <span class="panel-accent"></span>
+                        <h2 class="dp-title">Attendees</h2>
+                        <span class="dp-count">@training.AttendeeResponse.Count enrolled</span>
+                        <button class="dp-add-btn" @onclick="() => showAddAttendee = !showAddAttendee">
+                            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
+                                <path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                            </svg>
+                            Add Attendee
+                        </button>
+                    </div>
+
+                    @if (showAddAttendee)
+                    {
+                        <div class="attendee-add-panel">
+                            <div class="attendee-add-grid">
+                                <div class="input-group">
+                                    <label>Full Name <span class="req">*</span></label>
+                                    <input type="text" class="form-input" placeholder="e.g. Juan dela Cruz"
+                                           @bind="newAttendeeName" @bind:event="oninput" />
+                                </div>
+                                <div class="input-group">
+                                    <label>Email Address <span class="req">*</span></label>
+                                    <input type="email" class="form-input" placeholder="e.g. juan@company.com"
+                                           @bind="newAttendeeEmail" @bind:event="oninput" />
+                                </div>
+                                <div class="input-group">
+                                    <label>Contact Number</label>
+                                    <input type="text" class="form-input" placeholder="e.g. 09171234567"
+                                           @bind="newAttendeeContact" @bind:event="oninput" />
+                                </div>
+                                <div class="input-group input-group-btn">
+                                    <label>&nbsp;</label>
+                                    <button class="btn-add-attendee" @onclick="AddAttendee" disabled="@isAddingAttendee">
+                                        @if (isAddingAttendee)
+                                        {
+                                            <span class="spinner"></span>
+                                            <span>Adding...</span>
+                                        }
+                                        else
+                                        {
+                                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.5" />
+                                                <path d="M2 17c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                                <path d="M15 8v4M17 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                            </svg>
+                                            <span>Add Attendee</span>
+                                        }
+                                    </button>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(attValidation))
+                            {
+                                <div class="attendee-error">@attValidation</div>
+                            }
+                        </div>
+                    }
+
+                    <div class="dp-body">
+                        @if (!training.AttendeeResponse.Any())
+                        {
+                            <div class="empty-section">
+                                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="16" cy="13" r="6" stroke="rgba(224,37,26,0.4)" stroke-width="1.5" />
+                                    <path d="M4 34c0-6.627 5.373-10 12-10" stroke="rgba(224,37,26,0.4)" stroke-width="1.5" stroke-linecap="round" />
+                                    <path d="M28 20v8M32 24h-8" stroke="rgba(224,37,26,0.4)" stroke-width="1.5" stroke-linecap="round" />
+                                </svg>
+                                <span>No attendees enrolled yet.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="attendee-table-wrap">
+                                <table class="attendee-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Contact</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var (att, idx) in training.AttendeeResponse.Select((a, i) => (a, i + 1)))
+                                        {
+                                            <tr>
+                                                <td class="att-num">@idx</td>
+                                                <td>
+                                                    <div class="att-name-cell">
+                                                        <div class="att-avatar">@att.FullName.Substring(0, 1).ToUpper()</div>
+                                                        <span class="att-name">@att.FullName</span>
+                                                    </div>
+                                                </td>
+                                                <td class="att-email">@att.Email</td>
+                                                <td class="att-email">@att.Contact</td>
+                                                <td>
+                                                    <span class="status-chip chip-active">
+                                                        <span class="chip-dot"></span>
+                                                        Enrolled
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public Guid TrainingId { get; set; }
+
+    // ── State ─────────────────────────────────────────────────────────
+    private TrainingResponse? training;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string activeTab = "overview";
+    private string successMessage = string.Empty;
+    private string errorMessage = string.Empty;
+
+    // ── Edit form ─────────────────────────────────────────────────────
+    private string editTitle = string.Empty;
+    private string editDescription = string.Empty;
+    private int editDuration = 1;
+    private string editValidation = string.Empty;
+
+    // ── Materials ─────────────────────────────────────────────────────
+    private bool showAddMaterial = false;
+    private bool isUploadingMat = false;
+    private string matValidation = string.Empty;
+    private List<TrainingService.StagedFile> stagedFiles = new();
+    private InputFile? fileInput;
+
+    // ── Attendees ─────────────────────────────────────────────────────
+    private bool showAddAttendee = false;
+    private bool isAddingAttendee = false;
+    private string newAttendeeName = string.Empty;
+    private string newAttendeeEmail = string.Empty;
+    private string newAttendeeContact = string.Empty;
+    private string attValidation = string.Empty;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await TrainingService.GetAllTrainingsAsync();
+        training = all.FirstOrDefault(t => t.TrainingId == TrainingId);
+        if (training is not null) SeedEditForm();
+        isLoading = false;
+    }
+
+    private void SeedEditForm()
+    {
+        editTitle = training!.Title;
+        editDescription = training.Description ?? string.Empty;
+        editDuration = training.TrainingDurationInDays;
+    }
+
+    private void SetTab(string tab)
+    {
+        activeTab = tab;
+        successMessage = string.Empty;
+        errorMessage = string.Empty;
+    }
+
+    // ── File picker ───────────────────────────────────────────────────
+    private async Task TriggerFilePicker()
+    {
+        await JS.InvokeVoidAsync("eval", "document.getElementById('mat-file-input').click()");
+    }
+
+    // ── Edit ──────────────────────────────────────────────────────────
+    private async Task SaveEdit()
+    {
+        editValidation = string.Empty;
+        if (string.IsNullOrWhiteSpace(editTitle)) { editValidation = "Title is required."; return; }
+        if (editDuration < 1) { editValidation = "Duration must be at least 1 day."; return; }
+        isSaving = true;
+        StateHasChanged();
+        await Task.Delay(800); // TODO: wire to update endpoint
+        training!.Title = editTitle;
+        training.Description = editDescription;
+        training.TrainingDurationInDays = editDuration;
+        isSaving = false;
+        successMessage = "Training updated successfully!";
+        StateHasChanged();
+    }
+
+    private void ResetEdit() { editValidation = string.Empty; SeedEditForm(); }
+
+    // ── File handling ─────────────────────────────────────────────────
+    private async Task OnFilesSelected(InputFileChangeEventArgs e)
+    {
+        matValidation = string.Empty;
+        foreach (var file in e.GetMultipleFiles(20))
+        {
+            if (file.Size > 10_485_760) { matValidation = file.Name + " exceeds 10MB limit."; continue; }
+            using var stream = file.OpenReadStream(10_485_760);
+            using var ms = new System.IO.MemoryStream();
+            await stream.CopyToAsync(ms);
+            stagedFiles.Add(new TrainingService.StagedFile
+            {
+                Name = file.Name,
+                ContentType = file.ContentType,
+                Size = file.Size,
+                Data = ms.ToArray()
+            });
+        }
+        StateHasChanged();
+    }
+
+    private async Task UploadMaterials()
+    {
+        matValidation = string.Empty;
+        if (!stagedFiles.Any()) { matValidation = "Please select at least one file."; return; }
+        isUploadingMat = true;
+        StateHasChanged();
+        var (success, message) = await TrainingService.AddMaterialsAsync(TrainingId, stagedFiles);
+        if (success)
+        {
+            var all = await TrainingService.GetAllTrainingsAsync();
+            training = all.FirstOrDefault(t => t.TrainingId == TrainingId) ?? training;
+            showAddMaterial = false;
+            stagedFiles.Clear();
+            successMessage = "Materials uploaded successfully!";
+            errorMessage = string.Empty;
+        }
+        else { matValidation = "Upload failed: " + message; }
+        isUploadingMat = false;
+        StateHasChanged();
+    }
+
+    // ── Attendees ─────────────────────────────────────────────────────
+    private async Task AddAttendee()
+    {
+        attValidation = string.Empty;
+        if (string.IsNullOrWhiteSpace(newAttendeeName)) { attValidation = "Full name is required."; return; }
+        if (string.IsNullOrWhiteSpace(newAttendeeEmail)) { attValidation = "Email is required."; return; }
+        if (!newAttendeeEmail.Contains('@')) { attValidation = "Enter a valid email address."; return; }
+        isAddingAttendee = true;
+        StateHasChanged();
+        var attendee = new TrainingService.AddAttendeeItem
+        {
+            FullName = newAttendeeName,
+            Email = newAttendeeEmail,
+            Contact = newAttendeeContact
+        };
+        var (success, message) = await TrainingService.AddAttendeeAsync(TrainingId, attendee);
+        if (success)
+        {
+            var all = await TrainingService.GetAllTrainingsAsync();
+            training = all.FirstOrDefault(t => t.TrainingId == TrainingId) ?? training;
+            showAddAttendee = false;
+            ClearAttendeeForm();
+            successMessage = "Attendee added successfully!";
+            errorMessage = string.Empty;
+        }
+        else { attValidation = "Failed: " + message; }
+        isAddingAttendee = false;
+        StateHasChanged();
+    }
+
+    private void ClearAttendeeForm()
+    {
+        newAttendeeName = string.Empty;
+        newAttendeeEmail = string.Empty;
+        newAttendeeContact = string.Empty;
+        attValidation = string.Empty;
+    }
+
+    // ── Toggle ────────────────────────────────────────────────────────
+    private async Task ToggleDisabled()
+    {
+        if (training is null) return;
+        var (success, message) = await TrainingService.ToggleDisabledAsync(TrainingId, !training.Disabled);
+        if (success)
+        {
+            training.Disabled = !training.Disabled;
+            successMessage = "Training " + (training.Disabled ? "disabled" : "enabled") + " successfully!";
+            errorMessage = string.Empty;
+        }
+        else errorMessage = "Failed: " + message;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes >= 1_048_576) return (bytes / 1_048_576.0).ToString("F1") + " MB";
+        if (bytes >= 1_024) return (bytes / 1_024.0).ToString("F1") + " KB";
+        return bytes + " B";
+    }
+
+    private string GetFileTypeLabel(string name)
+    {
+        var ext = System.IO.Path.GetExtension(name).ToLower();
+        return ext switch
+        {
+            ".pdf" => "PDF",
+            ".doc" or ".docx" => "DOC",
+            ".mp4" or ".mov" or ".avi" => "VID",
+            ".png" or ".jpg" or ".jpeg" or ".gif" => "IMG",
+            ".xlsx" or ".xls" => "XLS",
+            ".pptx" or ".ppt" => "PPT",
+            ".zip" or ".rar" => "ZIP",
+            _ => "FILE"
+        };
+    }
+
+    private string GetFileTypeCss(string name)
+    {
+        var ext = System.IO.Path.GetExtension(name).ToLower();
+        return ext switch
+        {
+            ".pdf" => "ftype-pdf",
+            ".doc" or ".docx" => "ftype-doc",
+            ".mp4" or ".mov" or ".avi" => "ftype-vid",
+            ".png" or ".jpg" or ".jpeg" or ".gif" => "ftype-img",
+            ".xlsx" or ".xls" => "ftype-xls",
+            ".pptx" or ".ppt" => "ftype-ppt",
+            ".zip" or ".rar" => "ftype-zip",
+            _ => "ftype-file"
+        };
+    }
+
+    private string GetMatTypeLabel(string fileName)
+    {
+        var ext = System.IO.Path.GetExtension(fileName).ToLower();
+        return ext switch
+        {
+            ".pdf" => "PDF",
+            ".doc" or ".docx" => "DOC",
+            ".mp4" or ".mov" or ".avi" => "VID",
+            ".png" or ".jpg" or ".jpeg" or ".gif" => "IMG",
+            ".xlsx" or ".xls" => "XLS",
+            ".pptx" or ".ppt" => "PPT",
+            ".zip" or ".rar" => "ZIP",
+            _ => "FILE"
+        };
+    }
+
+    private string GetMatIconCss(string fileName)
+    {
+        var ext = System.IO.Path.GetExtension(fileName).ToLower();
+        return ext switch
+        {
+            ".pdf" => "mat-icon mat-pdf",
+            ".doc" or ".docx" => "mat-icon mat-doc",
+            ".mp4" or ".mov" or ".avi" => "mat-icon mat-vid",
+            ".png" or ".jpg" or ".jpeg" or ".gif" => "mat-icon mat-img",
+            ".xlsx" or ".xls" => "mat-icon mat-xls",
+            ".pptx" or ".ppt" => "mat-icon mat-ppt",
+            ".zip" or ".rar" => "mat-icon mat-zip",
+            _ => "mat-icon mat-file"
+        };
+    }
+}

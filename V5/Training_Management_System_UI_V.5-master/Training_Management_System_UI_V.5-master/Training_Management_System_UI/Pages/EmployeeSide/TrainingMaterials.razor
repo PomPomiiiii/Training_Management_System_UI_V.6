@@ -1,0 +1,259 @@
+﻿@page "/employee/trainings/{TrainingId:int}/materials"
+@layout EmployeeLayout
+
+<PageTitle>Materials | SitesPhil TMS</PageTitle>
+
+<div class="page-wrapper">
+
+    <!-- Back nav -->
+    <a href="/employee/trainings/@TrainingId" class="back-link">
+        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13 8H3M7 12l-4-4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Back to Training Details
+    </a>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="page-eyebrow">
+                <span class="eyebrow-line"></span>
+                <span>Training Materials</span>
+            </div>
+            <h1 class="page-title">@(trainingTitle ?? "Materials")</h1>
+            <p class="page-subtitle">@materials.Count file@(materials.Count == 1 ? "" : "s") available</p>
+        </div>
+    </div>
+
+    <!-- Filter / search toolbar -->
+    <div class="toolbar">
+        <div class="search-wrapper">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.5" />
+                <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            <input type="text" class="search-input" placeholder="Search files..."
+                   @bind="searchTerm" @bind:event="oninput" />
+        </div>
+        <!-- Filter by type -->
+        <select class="filter-select" @bind="selectedType">
+            <option value="">All Types</option>
+            <option value="pdf">PDF</option>
+            <option value="word">Word</option>
+            <option value="image">Image</option>
+            <option value="video">Video</option>
+            <option value="other">Other</option>
+        </select>
+        <div class="result-count">
+            @FilteredMaterials.Count() file@(FilteredMaterials.Count() == 1 ? "" : "s")
+        </div>
+    </div>
+
+    <!-- Type breakdown badges -->
+    <div class="type-summary">
+        @foreach (var group in materials.GroupBy(m => GetTypeGroup(m.MimeType)))
+        {
+            <span class="type-chip @group.Key.ToLower()">
+                @GetTypeLabel(group.Key) · @group.Count()
+            </span>
+        }
+    </div>
+
+    <!-- Materials List -->
+    @if (!FilteredMaterials.Any())
+    {
+        <div class="empty-state">
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="6" width="32" height="28" rx="3" stroke="currentColor" stroke-width="1.5" />
+                <path d="M4 4h29l7 7v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                <path d="M13 20h14M13 26h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            <p>No materials match your search.</p>
+        </div>
+    }
+    else
+    {
+        <div class="materials-list">
+            @{
+                int idx = 1;
+            }
+            @foreach (var m in FilteredMaterials)
+            {
+                <div class="material-card">
+                    <!-- File icon -->
+                    <div class="file-icon-wrap @GetTypeGroup(m.MimeType).ToLower()">
+                        @GetFileIconSvg(m.MimeType)
+                    </div>
+
+                    <!-- File info -->
+                    <div class="file-info">
+                        <!-- ERD: OriginalFileName -->
+                        <span class="file-name">@m.OriginalFileName</span>
+                        <div class="file-meta-row">
+                            <!-- ERD: MimeType, FileSize -->
+                            <span class="file-type-badge @GetTypeGroup(m.MimeType).ToLower()">@GetMimeLabel(m.MimeType)</span>
+                            <span class="file-size">@FormatSize(m.FileSize)</span>
+                            <!-- ERD: CreatedAt on Material -->
+                            <span class="file-date">Added @m.CreatedAt.ToString("MMM d, yyyy")</span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="file-actions">
+                        <!-- Download triggers StoragePath — ERD: StoragePath -->
+                        <button class="action-btn download" title="Download" @onclick="() => DownloadFile(m)">
+                            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M3 13h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                            </svg>
+                            <span>Download</span>
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+</div>
+
+@code {
+    [Parameter] public int TrainingId { get; set; }
+
+    private string? trainingTitle;
+    private string searchTerm = string.Empty;
+    private string selectedType = string.Empty;
+
+    private IEnumerable<MaterialItem> FilteredMaterials =>
+        materials
+            .Where(m => string.IsNullOrWhiteSpace(searchTerm) ||
+                        m.OriginalFileName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            .Where(m => string.IsNullOrWhiteSpace(selectedType) ||
+                        GetTypeGroup(m.MimeType).Equals(selectedType, StringComparison.OrdinalIgnoreCase));
+
+    // ERD: Material entity (MaterialId, TrainingId FK, OriginalFileName, StoredFileName,
+    //                        MimeType, FileSize, StoragePath, CreatedAt, UpdatedAt, DisabledAt)
+    private List<MaterialItem> materials = new();
+
+    protected override void OnParametersSet()
+    {
+        trainingTitle = TrainingId switch
+        {
+            1 => "Workplace Safety Orientation",
+            2 => "Fire Safety & Emergency Response",
+            3 => "Construction Site Protocols",
+            _ => "Training Materials"
+        };
+
+        materials = new()
+        {
+            new()
+            {
+                MaterialId       = 1,
+                TrainingId       = TrainingId,
+                OriginalFileName = "Safety_Handbook.pdf",
+                StoredFileName   = "mat_a1b2c3d4.pdf",
+                MimeType         = "application/pdf",
+                FileSize         = 2457600,
+                StoragePath      = "/uploads/trainings/1/mat_a1b2c3d4.pdf",
+                CreatedAt        = new DateTime(2025, 1, 10),
+            },
+            new()
+            {
+                MaterialId       = 2,
+                TrainingId       = TrainingId,
+                OriginalFileName = "PPE_Reference_Guide.pdf",
+                StoredFileName   = "mat_b2c3d4e5.pdf",
+                MimeType         = "application/pdf",
+                FileSize         = 1048576,
+                StoragePath      = "/uploads/trainings/1/mat_b2c3d4e5.pdf",
+                CreatedAt        = new DateTime(2025, 1, 10),
+            },
+            new()
+            {
+                MaterialId       = 3,
+                TrainingId       = TrainingId,
+                OriginalFileName = "Emergency_Procedures.docx",
+                StoredFileName   = "mat_c3d4e5f6.docx",
+                MimeType         = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                FileSize         = 512000,
+                StoragePath      = "/uploads/trainings/1/mat_c3d4e5f6.docx",
+                CreatedAt        = new DateTime(2025, 1, 11),
+            },
+            new()
+            {
+                MaterialId       = 4,
+                TrainingId       = TrainingId,
+                OriginalFileName = "Site_Map_2025.png",
+                StoredFileName   = "mat_d4e5f6g7.png",
+                MimeType         = "image/png",
+                FileSize         = 204800,
+                StoragePath      = "/uploads/trainings/1/mat_d4e5f6g7.png",
+                CreatedAt        = new DateTime(2025, 1, 12),
+            },
+        };
+    }
+
+    private void DownloadFile(MaterialItem m)
+    {
+        // Wire to JS interop or NavigationManager to trigger download via StoragePath
+        Console.WriteLine($"Download: {m.StoragePath}");
+    }
+
+    private string GetTypeGroup(string mime) => mime switch
+    {
+        "application/pdf" => "PDF",
+        var m when m.Contains("word") || m.Contains("document") => "Word",
+        var m when m.StartsWith("image/") => "Image",
+        var m when m.StartsWith("video/") => "Video",
+        _ => "Other"
+    };
+
+    private string GetTypeLabel(string group) => group;
+
+    private string GetMimeLabel(string mime) => mime switch
+    {
+        "application/pdf" => "PDF",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => "Word",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => "Excel",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation" => "PowerPoint",
+        "image/png" => "PNG",
+        "image/jpeg" => "JPEG",
+        "video/mp4" => "MP4",
+        _ => "File"
+    };
+
+    private string FormatSize(long bytes)
+    {
+        if (bytes >= 1_048_576) return $"{bytes / 1_048_576.0:F1} MB";
+        if (bytes >= 1024) return $"{bytes / 1024.0:F0} KB";
+        return $"{bytes} B";
+    }
+
+    private RenderFragment GetFileIconSvg(string mime) => builder =>
+    {
+        builder.AddMarkupContent(0, GetTypeGroup(mime) switch
+        {
+            "PDF" =>
+                "<svg viewBox='0 0 20 20' fill='none'><rect x='3' y='2' width='14' height='16' rx='1.5' stroke='currentColor' stroke-width='1.4'/><path d='M7 7h6M7 10h6M7 13h4' stroke='currentColor' stroke-width='1.3' stroke-linecap='round'/></svg>",
+            "Image" =>
+                "<svg viewBox='0 0 20 20' fill='none'><rect x='2' y='2' width='16' height='16' rx='1.5' stroke='currentColor' stroke-width='1.4'/><circle cx='6.5' cy='6.5' r='1.5' stroke='currentColor' stroke-width='1.2'/><path d='M2 14l4-4 3 3 3-3.5 4 4.5' stroke='currentColor' stroke-width='1.3' stroke-linecap='round'/></svg>",
+            "Video" =>
+                "<svg viewBox='0 0 20 20' fill='none'><rect x='2' y='2' width='16' height='16' rx='1.5' stroke='currentColor' stroke-width='1.4'/><path d='M8 6.5l6 3.5-6 3.5V6.5z' stroke='currentColor' stroke-width='1.3'/></svg>",
+            _ =>
+                "<svg viewBox='0 0 20 20' fill='none'><rect x='3' y='2' width='14' height='16' rx='1.5' stroke='currentColor' stroke-width='1.4'/><path d='M7 7h6M7 10h6M7 13h4' stroke='currentColor' stroke-width='1.3' stroke-linecap='round'/></svg>"
+        });
+    };
+
+    // ERD: Material entity model
+    private class MaterialItem
+    {
+        public int MaterialId { get; set; }
+        public int TrainingId { get; set; }
+        public string OriginalFileName { get; set; } = string.Empty;
+        public string StoredFileName { get; set; } = string.Empty;
+        public string MimeType { get; set; } = string.Empty;
+        public long FileSize { get; set; }
+        public string StoragePath { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+    }
+}

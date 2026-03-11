@@ -1,0 +1,473 @@
+﻿@page "/admin/users"
+@layout AdminLayout
+
+<PageTitle>Users | SitesPhil TMS</PageTitle>
+
+<div class="page-wrapper">
+
+    <div class="page-header">
+        <div class="header-left">
+            <div class="page-eyebrow">
+                <span class="eyebrow-line"></span>
+                <span>ACCOUNTS</span>
+            </div>
+            <h1 class="page-title">Users</h1>
+            <p class="page-subtitle">Manage system accounts</p>
+        </div>
+        <button class="btn-primary" @onclick="OpenAddModal">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.5" />
+                <path d="M2 17c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                <path d="M15 8v4M17 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            Add User
+        </button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="search-wrapper">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.5" />
+                <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            <input type="text" class="search-input" placeholder="Search by full name or email..."
+                   @bind="searchTerm" @bind:event="oninput" />
+        </div>
+        <select class="filter-select" @bind="selectedRole">
+            <option value="">All Roles</option>
+            @foreach (var role in roles)
+            {
+                <option value="@role.Name">@role.Name</option>
+            }
+        </select>
+        <select class="filter-select" @bind="selectedStatus">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="disabled">Disabled</option>
+        </select>
+        <div class="result-count">@FilteredUsers.Count() user@(FilteredUsers.Count() == 1 ? "" : "s")</div>
+    </div>
+
+    <!-- Users Table — columns match ERD User entity -->
+    <div class="table-card">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th>Created</th>
+                    <th>Status</th>
+                    <th>Disabled At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in FilteredUsers)
+                {
+                    <tr class="table-row">
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar @GetAvatarClass(user.Role)">@user.FullName[0]</div>
+                                <div class="user-details">
+                                    <!-- ERD uses FullName not just Name -->
+                                    <span class="user-name">@user.FullName</span>
+                                    <span class="user-id">UID-@user.UserId.ToString("D4")</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="role-badge role-@user.Role.ToLower()">@user.Role</span></td>
+                        <td class="td-muted">@user.Email</td>
+                        <td class="td-muted">@user.CreatedAt.ToString("MMM d, yyyy")</td>
+                        <td>
+                            <!-- ERD uses Disabled boolean, not Active -->
+                            <span class="status-chip @(!user.Disabled ? "chip-active" : "chip-disabled")">
+                                <span class="chip-dot"></span>
+                                @(!user.Disabled ? "Active" : "Disabled")
+                            </span>
+                        </td>
+                        <td class="td-muted">
+                            <!-- ERD: DisabledAt field -->
+                            @(user.DisabledAt.HasValue? user.DisabledAt.Value.ToString("MMM d, yyyy") : "—")
+                        </td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="btn-action btn-edit" title="Edit" @onclick="() => EditUser(user)">
+                                    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M11 2l3 3-9 9H2v-3l9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
+                                <!-- Toggle Disabled (ERD: Disabled + DisabledAt) -->
+                                <button class="btn-action btn-toggle" title="@(!user.Disabled ? "Disable User" : "Enable User")" @onclick="() => ToggleDisabled(user)">
+                                    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        @if (!user.Disabled)
+                                        {
+                                            <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
+                                            <path d="M6 8h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                                        }
+                                        else
+                                        {
+                                            <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
+                                            <path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                                        }
+                                    </svg>
+                                </button>
+                                <button class="btn-action btn-delete" title="Remove" @onclick="() => DeleteUser(user.UserId)">
+                                    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!FilteredUsers.Any())
+                {
+                    <tr><td colspan="7" class="empty-row"><div class="empty-state"><span>No users found.</span></div></td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════
+     ADD / EDIT USER MODAL
+     Flowchart: "Create User Account" →
+     "App Generates Password & Emails Credentials"
+════════════════════════════════════ -->
+@if (showModal)
+{
+    <div class="modal-backdrop" @onclick="CloseModal">
+        <div class="modal-card" @onclick:stopPropagation="true">
+
+            <div class="modal-header">
+                <div>
+                    <span class="modal-tag">@(isEditMode ? "EDIT" : "NEW") ACCOUNT</span>
+                    <h2 class="modal-title">@(isEditMode ? "Edit User" : "Create User Account")</h2>
+                </div>
+                <button class="modal-close" @onclick="CloseModal">×</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-grid">
+                    <!-- ERD: FullName -->
+                    <div class="input-group full-width">
+                        <label>Full Name <span class="req">*</span></label>
+                        <input type="text" class="form-input" placeholder="e.g. Juan dela Cruz"
+                               @bind="newUser.FullName" />
+                    </div>
+                    <!-- ERD: Email -->
+                    <div class="input-group">
+                        <label>Email Address <span class="req">*</span></label>
+                        <input type="email" class="form-input" placeholder="user@sitesphil.com"
+                               @bind="newUser.Email" />
+                    </div>
+                    <!-- ERD: RoleId (FK) — shown as Role Name for UI -->
+                    <div class="input-group">
+                        <label>Role <span class="req">*</span></label>
+                        <select class="form-input form-select" @bind="newUser.Role">
+                            <option value="">Select role</option>
+                            @foreach (var role in roles)
+                            {
+                                <option value="@role.Name">@role.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Role descriptions -->
+                @if (!string.IsNullOrEmpty(newUser.Role))
+                {
+                    var selectedRole = roles.FirstOrDefault(r => r.Name == newUser.Role);
+                    if (selectedRole != null)
+                    {
+                        <div class="role-desc-hint">
+                            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="12" height="12">
+                                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
+                                <path d="M8 5v3M8 11h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                            </svg>
+                            <span><strong>@selectedRole.Name:</strong> @selectedRole.Description</span>
+                        </div>
+                    }
+                }
+
+                @if (!isEditMode)
+                {
+                    <!-- Flowchart: "Application Generates Password & Emails Credentials to User" -->
+                    <div class="password-section">
+                        <div class="password-section-header">
+                            <div class="psec-title-row">
+                                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+                                    <rect x="4" y="9" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5" />
+                                    <path d="M7 9V6a3 3 0 016 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                </svg>
+                                <span>Auto-generated Password</span>
+                            </div>
+                            <button type="button" class="regen-btn" @onclick="RegeneratePassword">Regenerate</button>
+                        </div>
+                        <div class="password-display">
+                            <span class="pw-value">@generatedPassword</span>
+                            <button type="button" class="copy-btn" @onclick="CopyPassword">
+                                @(copiedPw ? "Copied!" : "Copy")
+                            </button>
+                        </div>
+                        <!-- Flowchart note: credentials emailed automatically -->
+                        <p class="password-note">
+                            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="12" height="12">
+                                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
+                                <path d="M8 5v3M8 11h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                            </svg>
+                            Per system flow: the application will automatically generate and email these credentials to the user upon account creation. The password hash will be stored (not plaintext) per the ERD.
+                        </p>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(modalError))
+                {
+                    <div class="modal-error">
+                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+                            <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
+                            <path d="M8 5v3M8 11h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                        </svg>
+                        @modalError
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(modalSuccess))
+                {
+                    <div class="modal-success">
+                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+                            <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
+                            <path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        @modalSuccess
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-ghost" @onclick="CloseModal">Cancel</button>
+                <button class="btn-primary" disabled="@isModalLoading" @onclick="SaveUser">
+                    @if (isModalLoading)
+                    {
+                        <span class="spinner"></span>
+                        <span>@(isEditMode ? "Saving..." : "Creating Account...")</span>
+                    }
+                    else
+                    {
+                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+                            @if (isEditMode)
+                            {
+                                <path d="M11 2l3 3-9 9H2v-3l9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+                            }
+                            else
+                            {
+                                <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                            }
+                        </svg>
+                        <span>@(isEditMode ? "Save Changes" : "Create Account")</span>
+                    }
+                </button>
+            </div>
+
+        </div>
+    </div>
+}
+
+@code {
+    private string searchTerm = string.Empty;
+    private string selectedRole = string.Empty;
+    private string selectedStatus = string.Empty;
+    private bool showModal = false;
+    private bool isEditMode = false;
+    private bool isModalLoading = false;
+    private bool copiedPw = false;
+    private string generatedPassword = string.Empty;
+    private string modalError = string.Empty;
+    private string modalSuccess = string.Empty;
+    private int nextId = 6;
+
+    private UserFormModel newUser = new();
+
+    // ERD: Role entity (RoleId, Name, Description)
+    private List<RoleItem> roles = new()
+    {
+        new() { RoleId = 1, Name = "Admin", Description = "Full system access — manage users, trainings, and system settings." },
+        new() { RoleId = 2, Name = "Trainer", Description = "Can create and manage training programs and materials." },
+        new() { RoleId = 3, Name = "Employee", Description = "Can view assigned trainings and access training materials." },
+    };
+
+    // ERD-aligned User entity
+    private List<UserItem> users = new()
+    {
+        new() { UserId = 1, FullName = "Benjie Zamora",  Email = "benjie@sitesphil.com", Role = "Admin",    RoleId = 1, CreatedAt = new DateTime(2024, 1, 10),  Disabled = false },
+        new() { UserId = 2, FullName = "Maria Santos",   Email = "maria@sitesphil.com",  Role = "Trainer",  RoleId = 2, CreatedAt = new DateTime(2024, 3, 5),   Disabled = false },
+        new() { UserId = 3, FullName = "Juan dela Cruz", Email = "juan@example.com",     Role = "Employee", RoleId = 3, CreatedAt = new DateTime(2025, 6, 12),  Disabled = false },
+        new() { UserId = 4, FullName = "Ana Reyes",      Email = "ana@example.com",      Role = "Employee", RoleId = 3, CreatedAt = new DateTime(2025, 8, 20),  Disabled = true, DisabledAt = new DateTime(2026, 1, 5) },
+        new() { UserId = 5, FullName = "Carlo Mendoza",  Email = "carlo@sitesphil.com",  Role = "Trainer",  RoleId = 2, CreatedAt = new DateTime(2025, 1, 15),  Disabled = false },
+    };
+
+    private IEnumerable<UserItem> FilteredUsers => users
+        .Where(u => string.IsNullOrEmpty(searchTerm) ||
+                    u.FullName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    u.Email.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+        .Where(u => string.IsNullOrEmpty(selectedRole) || u.Role == selectedRole)
+        .Where(u => selectedStatus switch
+        {
+            "active" => !u.Disabled,
+            "disabled" => u.Disabled,
+            _ => true
+        });
+
+    // ─── Modal ─────────────────────────────
+    private void OpenAddModal()
+    {
+        isEditMode = false;
+        newUser = new();
+        generatedPassword = GeneratePassword();
+        modalError = modalSuccess = string.Empty;
+        copiedPw = false;
+        showModal = true;
+    }
+
+    private void EditUser(UserItem user)
+    {
+        isEditMode = true;
+        newUser = new UserFormModel
+        {
+            FullName = user.FullName,
+            Email = user.Email,
+            Role = user.Role,
+            EditingId = user.UserId
+        };
+        modalError = modalSuccess = string.Empty;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        modalError = modalSuccess = string.Empty;
+    }
+
+    private async Task SaveUser()
+    {
+        modalError = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(newUser.FullName)) { modalError = "Full name is required."; return; }
+        if (string.IsNullOrWhiteSpace(newUser.Email)) { modalError = "Email address is required."; return; }
+        if (string.IsNullOrWhiteSpace(newUser.Role)) { modalError = "Please select a role."; return; }
+
+        isModalLoading = true;
+        StateHasChanged();
+
+        await Task.Delay(900); // Replace with real API call
+        // Real implementation:
+        // POST /api/users → { FullName, Email, RoleId, PasswordHash }
+        // System auto-generates password, hashes it (ERD: PasswordHash), emails credentials (Flowchart)
+
+        var selectedRoleItem = roles.FirstOrDefault(r => r.Name == newUser.Role);
+
+        if (isEditMode)
+        {
+            var existing = users.FirstOrDefault(u => u.UserId == newUser.EditingId);
+            if (existing != null)
+            {
+                existing.FullName = newUser.FullName;
+                existing.Email = newUser.Email;
+                existing.Role = newUser.Role;
+                existing.RoleId = selectedRoleItem?.RoleId ?? 3;
+                existing.UpdatedAt = DateTime.Now;
+            }
+            modalSuccess = $"User \"{newUser.FullName}\" updated successfully.";
+        }
+        else
+        {
+            users.Add(new UserItem
+            {
+                UserId = nextId++,
+                FullName = newUser.FullName,
+                Email = newUser.Email,
+                Role = newUser.Role,
+                RoleId = selectedRoleItem?.RoleId ?? 3,
+                CreatedAt = DateTime.Now,
+                Disabled = false
+                // PasswordHash stored server-side
+            });
+            modalSuccess = $"Account created for \"{newUser.FullName}\". Login credentials have been emailed to {newUser.Email}.";
+        }
+
+        isModalLoading = false;
+        StateHasChanged();
+
+        await Task.Delay(1800);
+        CloseModal();
+    }
+
+    // ─── Password generator (Flowchart: app generates password) ───
+    private string GeneratePassword()
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$";
+        var rng = new System.Random();
+        return new string(Enumerable.Range(0, 12).Select(_ => chars[rng.Next(chars.Length)]).ToArray());
+    }
+
+    private void RegeneratePassword()
+    {
+        generatedPassword = GeneratePassword();
+        copiedPw = false;
+    }
+
+    private void CopyPassword() => copiedPw = true;
+
+    // ─── User actions ─────────────────────
+    private void DeleteUser(int id) => users.RemoveAll(u => u.UserId == id);
+
+    // ERD: Disabled + DisabledAt fields
+    private void ToggleDisabled(UserItem user)
+    {
+        user.Disabled = !user.Disabled;
+        user.DisabledAt = user.Disabled ? DateTime.Now : null;
+        user.UpdatedAt = DateTime.Now;
+    }
+
+    private string GetAvatarClass(string role) => role switch
+    {
+        "Admin" => "avatar-admin",
+        "Trainer" => "avatar-trainer",
+        _ => "avatar-employee"
+    };
+
+    // ─── Models (aligned with ERD) ────────
+    // ERD Role entity
+    public class RoleItem
+    {
+        public int RoleId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+
+    // ERD User entity
+    public class UserItem
+    {
+        public int UserId { get; set; }
+        public int RoleId { get; set; }
+        public string Role { get; set; } = string.Empty; // Display name (from Role.Name)
+        public string FullName { get; set; } = string.Empty; // ERD: FullName
+        public string Email { get; set; } = string.Empty;
+        // PasswordHash stored server-side only
+        public bool Disabled { get; set; } // ERD: Disabled
+        public DateTime CreatedAt { get; set; } // ERD: CreatedAt
+        public DateTime UpdatedAt { get; set; } // ERD: UpdatedAt
+        public DateTime? DisabledAt { get; set; } // ERD: DisabledAt
+    }
+
+    public class UserFormModel
+    {
+        public int EditingId { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+    }
+}

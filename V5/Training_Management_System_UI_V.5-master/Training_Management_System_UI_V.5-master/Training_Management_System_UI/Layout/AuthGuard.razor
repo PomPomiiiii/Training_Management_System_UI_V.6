@@ -1,0 +1,90 @@
+﻿@inject UserSessionService UserSessionService
+@inject NavigationManager Nav
+@using Training_Management_System_UI.Services
+@implements IDisposable
+
+@if (isChecking)
+{
+    <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0a;color:#555;">
+        Checking session...
+    </div>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string RequiredRole { get; set; } = string.Empty;
+
+    private static readonly string[] PublicOnlyRoutes = new[] { "/login" };
+    private bool isChecking = true;
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await CheckAuth();
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        await CheckAuth();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CheckAuth()
+    {
+        isChecking = true;
+        await InvokeAsync(StateHasChanged);
+
+        var currentPath = new Uri(Nav.Uri).AbsolutePath.ToLower();
+        var isPublicOnlyPage = PublicOnlyRoutes.Any(r => currentPath == r);
+
+        var sessionValid = await UserSessionService.LoadSessionAsync();
+        var isLoggedIn = sessionValid && UserSessionService.IsLoggedIn;
+
+        // Rule 1: Logged-in users cannot visit /login
+        if (isLoggedIn && isPublicOnlyPage)
+        {
+            Nav.NavigateTo(UserSessionService.Role == "Admin"
+                ? "/admin/dashboard"
+                : "/employee/dashboard", replace: true);
+            return;
+        }
+
+        // Rule 2: Anonymous users cannot visit protected pages
+        if (!isLoggedIn && !isPublicOnlyPage)
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+
+        // Rule 3: Role-based access
+        if (isLoggedIn)
+        {
+            if (currentPath.StartsWith("/admin") && UserSessionService.Role != "Admin")
+            {
+                Nav.NavigateTo("/login", forceLoad: true);
+                return;
+            }
+            if (currentPath.StartsWith("/employee") && UserSessionService.Role != "Employee")
+            {
+                Nav.NavigateTo("/login", forceLoad: true);
+                return;
+            }
+        }
+
+        isChecking = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

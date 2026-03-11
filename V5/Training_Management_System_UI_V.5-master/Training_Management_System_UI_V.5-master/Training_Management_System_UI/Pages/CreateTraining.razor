@@ -1,0 +1,555 @@
+﻿@inject TrainingService TrainingService
+@inject UserSessionService UserSessionService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@using Training_Management_System_UI.Services
+@using Microsoft.AspNetCore.Components.Forms
+
+@page "/admin/create-training"
+@layout AdminLayout
+
+<PageTitle>Create Training | SitesPhil TMS</PageTitle>
+
+<div class="page-wrapper">
+
+    <div class="page-header">
+        <div class="header-left">
+            <div class="page-eyebrow">
+                <span class="eyebrow-line"></span>
+                <span>TRAININGS</span>
+            </div>
+            <h1 class="page-title">Create Training</h1>
+            <p class="page-subtitle">Add a new training program</p>
+        </div>
+        <a href="/admin/manage-trainings" class="btn-secondary-nav">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5l-5 5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            Back to Trainings
+        </a>
+    </div>
+
+    <!-- Step indicators -->
+    <div class="step-bar">
+        <div class="step @(activeStep >= 1 ? "step-active" : "") @(activeStep > 1 ? "step-done" : "")">
+            <div class="step-num">@(activeStep > 1 ? "✓" : "1")</div>
+            <span class="step-label">Training Info</span>
+        </div>
+        <div class="step-connector @(activeStep > 1 ? "connector-done" : "")"></div>
+        <div class="step @(activeStep >= 2 ? "step-active" : "") @(activeStep > 2 ? "step-done" : "")">
+            <div class="step-num">@(activeStep > 2 ? "✓" : "2")</div>
+            <span class="step-label">Materials</span>
+        </div>
+        <div class="step-connector @(activeStep > 2 ? "connector-done" : "")"></div>
+        <div class="step @(activeStep >= 3 ? "step-active" : "")">
+            <div class="step-num">3</div>
+            <span class="step-label">Attendees</span>
+        </div>
+    </div>
+
+    <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+
+        <!-- STEP 1: Training Info -->
+        @if (activeStep == 1)
+        {
+            <div class="form-card step-panel">
+                <div class="form-card-header">
+                    <span class="form-card-tag">STEP 01</span>
+                    <h3 class="form-card-title">Training Information</h3>
+                    <p class="form-card-sub">Provide the core details for this training program.</p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="input-group full-width">
+                        <label>Training Title <span class="req">*</span></label>
+                        <InputText @bind-Value="model.Title" class="form-input" placeholder="e.g. Cybersecurity Basics" />
+                        <ValidationMessage For="@(() => model.Title)" />
+                    </div>
+
+                    <div class="input-group full-width">
+                        <label>Description</label>
+                        <InputTextArea @bind-Value="model.Description" class="form-input form-textarea" placeholder="Describe what this training covers, objectives, and target audience..." />
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Training Duration <span class="req">*</span>
+                            <span class="label-hint">in days</span>
+                        </label>
+                        <div class="input-with-suffix">
+                            <InputNumber @bind-Value="model.TrainingDurationInDays" class="form-input" placeholder="e.g. 2" min="1" />
+                            <span class="input-suffix">day(s)</span>
+                        </div>
+                        <ValidationMessage For="@(() => model.TrainingDurationInDays)" />
+                    </div>
+
+                    <div class="input-group">
+                        <label>Training Date <span class="req">*</span></label>
+                        <InputDate @bind-Value="model.TrainingDate" class="form-input" />
+                        <ValidationMessage For="@(() => model.TrainingDate)" />
+                    </div>
+                </div>
+
+                <div class="erd-note">
+                    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="13" height="13">
+                        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
+                        <path d="M8 5v3M8 11h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                    </svg>
+                    Training materials and attendees are configured in the next steps.
+                </div>
+
+                <div class="form-actions">
+                    <a href="/admin/dashboard" class="btn-ghost">Cancel</a>
+                    <button type="button" class="btn-primary" @onclick="GoToStep2">
+                        Next: Upload Materials
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        }
+
+        <!-- STEP 2: Upload Materials -->
+        @if (activeStep == 2)
+        {
+            <div class="form-card step-panel">
+                <div class="form-card-header">
+                    <span class="form-card-tag">STEP 02</span>
+                    <h3 class="form-card-title">Upload Training Materials</h3>
+                    <p class="form-card-sub">Attach files for this training. Supported: PDF, DOCX, MP4, MOV.</p>
+                </div>
+
+                <div class="dropzone @(isUploading ? "dropzone-loading" : "")" @onclick="TriggerFilePicker">
+                    @if (isUploading)
+                    {
+                        <div class="dropzone-icon">
+                            <span class="spinner"></span>
+                        </div>
+                        <div class="dropzone-text">
+                            <span class="dz-primary">Reading files...</span>
+                            <span class="dz-secondary">Please wait</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="dropzone-icon">
+                            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="4" y="10" width="24" height="28" rx="2" stroke="currentColor" stroke-width="1.5" />
+                                <path d="M12 10V6a2 2 0 012-2h16a2 2 0 012 2v24a2 2 0 01-2 2h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                <path d="M16 22v-8M16 14l-3 3M16 14l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="dropzone-text">
+                            <span class="dz-primary">Click to browse files</span>
+                            <span class="dz-secondary">PDF, DOCX, MP4, MOV — max 500MB per file</span>
+                        </div>
+                    }
+                    <InputFile id="file-input"
+                               OnChange="HandleFileSelect"
+                               multiple
+                               style="display:none !important;"
+                               accept=".pdf,.docx,.doc,.mp4,.mov,.avi"
+                               @onclick:stopPropagation="true" />
+                </div>
+
+                <div class="file-type-legend">
+                    <span class="ftype-badge pdf">PDF</span>
+                    <span class="ftype-badge doc">DOCX</span>
+                    <span class="ftype-badge vid">MP4</span>
+                    <span class="ftype-badge vid">MOV</span>
+                    <span class="ftype-info">Supported formats</span>
+                </div>
+
+                @if (stagedFiles.Any())
+                {
+                    <div class="files-list">
+                        <div class="files-list-header">
+                            <span>@stagedFiles.Count file(s) ready to upload</span>
+                            <button type="button" class="clear-all-btn" @onclick="ClearAllFiles">Clear all</button>
+                        </div>
+                        @foreach (var file in stagedFiles)
+                        {
+                            <div class="file-row">
+                                <div class="file-icon-wrap @GetFileTypeClass(file.Name)">
+                                    @GetFileIcon(file.Name)
+                                </div>
+                                <div class="file-info">
+                                    <span class="file-name">@file.Name</span>
+                                    <span class="file-meta">@file.ContentType · @FormatFileSize(file.Size)</span>
+                                </div>
+                                <div class="file-status">
+                                    <span class="status-pending">PENDING UPLOAD</span>
+                                </div>
+                                <button type="button" class="file-remove" @onclick="() => RemoveFile(file)">×</button>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="no-files-hint">No files selected yet. Upload materials for participants to access after training enrollment.</div>
+                }
+
+                <div class="form-actions">
+                    <button type="button" class="btn-ghost" @onclick="() => activeStep = 1" disabled="@isUploading">← Back</button>
+                    <button type="button" class="btn-secondary-step" @onclick="GoToStep3" disabled="@isUploading">Skip for now</button>
+                    <button type="button" class="btn-primary" @onclick="GoToStep3" disabled="@isUploading">
+                        Next: Add Attendees
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        }
+
+        <!-- STEP 3: Attendees -->
+        @if (activeStep == 3)
+        {
+            <div class="form-card step-panel">
+                <div class="form-card-header">
+                    <span class="form-card-tag">STEP 03</span>
+                    <h3 class="form-card-title">Add &amp; Track Attendees</h3>
+                    <p class="form-card-sub">Assign participants to this training session.</p>
+                </div>
+
+                <div class="attendee-add-panel">
+                    <div class="attendee-add-grid">
+                        <div class="input-group">
+                            <label>Full Name <span class="req">*</span></label>
+                            <input type="text" class="form-input" placeholder="e.g. Juan dela Cruz" @bind="newAttendeeName" />
+                        </div>
+                        <div class="input-group">
+                            <label>Email Address <span class="req">*</span></label>
+                            <input type="email" class="form-input" placeholder="e.g. juan@company.com" @bind="newAttendeeEmail" />
+                        </div>
+                        <div class="input-group">
+                            <label>Contact Number</label>
+                            <input type="text" class="form-input" placeholder="e.g. 09171234567" @bind="newAttendeeContact" />
+                        </div>
+                        <div class="input-group input-group-btn">
+                            <label>&nbsp;</label>
+                            <button type="button" class="btn-add-attendee" @onclick="AddAttendee">
+                                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.5" />
+                                    <path d="M2 17c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                    <path d="M15 8v4M17 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                </svg>
+                                Add Attendee
+                            </button>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(attendeeError))
+                    {
+                        <div class="attendee-error">@attendeeError</div>
+                    }
+                </div>
+
+                @if (attendees.Any())
+                {
+                    <div class="attendees-table-wrap">
+                        <table class="attendees-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Contact</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var (attendee, idx) in attendees.Select((a, i) => (a, i + 1)))
+                                {
+                                    <tr>
+                                        <td class="td-num">@idx</td>
+                                        <td>
+                                            <div class="attendee-cell">
+                                                <div class="att-avatar">@attendee.Name[0]</div>
+                                                <span class="att-name">@attendee.Name</span>
+                                            </div>
+                                        </td>
+                                        <td class="td-muted">@attendee.Email</td>
+                                        <td class="td-muted">@(string.IsNullOrEmpty(attendee.Contact) ? "—" : attendee.Contact)</td>
+                                        <td>
+                                            <button type="button" class="att-remove" @onclick="() => RemoveAttendee(attendee)">Remove</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="no-attendees">
+                        <span>No attendees added yet</span>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="error-banner">@errorMessage</div>
+                }
+
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <div class="success-banner">@successMessage</div>
+                }
+
+                <div class="submit-summary">
+                    <div class="summary-row">
+                        <span class="summary-label">Training</span>
+                        <span class="summary-val">@model.Title</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Duration</span>
+                        <span class="summary-val">@model.TrainingDurationInDays day(s)</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Materials</span>
+                        <span class="summary-val">@stagedFiles.Count file(s)</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Attendees</span>
+                        <span class="summary-val">@attendees.Count registered</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-ghost" @onclick="() => activeStep = 2">← Back</button>
+                    <button type="submit" class="btn-primary btn-create" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner"></span>
+                            <span>Creating Training...</span>
+                        }
+                        else
+                        {
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" />
+                                <path d="M6.5 10l2.5 2.5 4-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span>Create Training</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        }
+
+    </EditForm>
+</div>
+
+@code {
+    private int activeStep = 1;
+    private bool isLoading = false;
+    private bool isUploading = false;
+    private string successMessage = string.Empty;
+    private string errorMessage = string.Empty;
+    private string attendeeError = string.Empty;
+
+    private string newAttendeeName = string.Empty;
+    private string newAttendeeEmail = string.Empty;
+    private string newAttendeeContact = string.Empty;
+
+    private TrainingFormModel model = new() { TrainingDate = DateTime.Today.AddDays(7), TrainingDurationInDays = 1 };
+    
+    private List<TrainingService.StagedFile> stagedFiles = new();
+    private List<AttendeeItem> attendees = new();
+
+    // ─── Init ────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSessionService.LoadSessionAsync();
+        if (!UserSessionService.IsLoggedIn)
+            Nav.NavigateTo("/login");
+    }
+
+    // ─── Navigation ─────────────────────────
+    private void GoToStep2()
+    {
+        if (!string.IsNullOrWhiteSpace(model.Title))
+            activeStep = 2;
+    }
+
+    private void GoToStep3() => activeStep = 3;
+
+    // ─── File Handling ───────────────────────
+    private async Task TriggerFilePicker()
+    {
+        if (isUploading) return;
+        await JS.InvokeVoidAsync("eval", "document.getElementById('file-input').click()");
+    }
+
+    private async Task HandleFileSelect(InputFileChangeEventArgs e)
+    {
+        isUploading = true;
+        StateHasChanged();
+
+        const long maxFileSize = 500 * 1024 * 1024; // 500 MB
+
+        foreach (var file in e.GetMultipleFiles(20))
+        {
+            if (stagedFiles.Any(f => f.Name == file.Name)) continue;
+
+            try
+            {
+                // ✅ Read bytes HERE, not at submit time
+                using var stream = file.OpenReadStream(maxAllowedSize: maxFileSize);
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+
+                stagedFiles.Add(new TrainingService.StagedFile
+                {
+                    Name = file.Name,
+                    ContentType = string.IsNullOrEmpty(file.ContentType)
+                        ? "application/octet-stream"
+                        : file.ContentType,
+                    Size = file.Size,
+                    Data = ms.ToArray(),   // ✅ Data is now populated
+                    BrowserFile = null     // no longer needed
+                });
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Failed to read \"{file.Name}\": {ex.Message}";
+            }
+        }
+
+        isUploading = false;
+        StateHasChanged();
+    }
+
+    private void RemoveFile(TrainingService.StagedFile file) => stagedFiles.Remove(file);
+    private void ClearAllFiles() => stagedFiles.Clear();
+
+    private string GetFileTypeClass(string name)
+    {
+        var ext = System.IO.Path.GetExtension(name).ToLower();
+        return ext switch
+        {
+            ".pdf" => "type-pdf",
+            ".docx" or ".doc" => "type-doc",
+            ".mp4" or ".mov" or ".avi" => "type-vid",
+            _ => "type-other"
+        };
+    }
+
+    private MarkupString GetFileIcon(string name)
+    {
+        var ext = System.IO.Path.GetExtension(name).ToLower();
+        var label = ext switch
+        {
+            ".pdf" => "PDF",
+            ".docx" or ".doc" => "DOC",
+            ".mp4" or ".mov" or ".avi" => "VID",
+            _ => "FILE"
+        };
+        return new MarkupString($"<span>{label}</span>");
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024} KB";
+        return $"{bytes / (1024 * 1024)} MB";
+    }
+
+    // ─── Attendees ───────────────────────────
+    private void AddAttendee()
+    {
+        attendeeError = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(newAttendeeName)) { attendeeError = "Full name is required."; return; }
+        if (string.IsNullOrWhiteSpace(newAttendeeEmail)) { attendeeError = "Email address is required."; return; }
+        if (attendees.Any(a => a.Email.Equals(newAttendeeEmail.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            attendeeError = "An attendee with this email is already added.";
+            return;
+        }
+
+        attendees.Add(new AttendeeItem
+        {
+            Name = newAttendeeName.Trim(),
+            Email = newAttendeeEmail.Trim(),
+            Contact = newAttendeeContact.Trim()
+        });
+
+        newAttendeeName = string.Empty;
+        newAttendeeEmail = string.Empty;
+        newAttendeeContact = string.Empty;
+    }
+
+    private void RemoveAttendee(AttendeeItem a) => attendees.Remove(a);
+
+    // ─── Submit ──────────────────────────────
+    private async Task HandleSubmit()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        StateHasChanged();
+
+        var attendeeItems = attendees.Select(a => new TrainingService.AddAttendeeItem
+        {
+            FullName = a.Name,
+            Email = a.Email,
+            Contact = a.Contact
+        }).ToList();
+
+        var description = string.IsNullOrWhiteSpace(model.Description) ? "N/A" : model.Description.Trim();
+
+        var (success, message) = await TrainingService.CreateTrainingAsync(
+    model.Title,
+    description,        // ← make sure it's this, not model.Description
+    model.TrainingDurationInDays,
+    UserSessionService.UserId,
+    stagedFiles,
+    attendeeItems
+);
+
+        if (success)
+        {
+            successMessage = $"Training \"{model.Title}\" created successfully!";
+            model = new() { TrainingDate = DateTime.Today.AddDays(7), TrainingDurationInDays = 1 };
+            stagedFiles.Clear();
+            attendees.Clear();
+            activeStep = 1;
+            await Task.Delay(1500);
+            Nav.NavigateTo("/admin/manage-trainings");
+        }
+        else
+        {
+            errorMessage = $"Failed: {message}";
+        }
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    // ─── Models ──────────────────────────────
+    public class TrainingFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Training title is required")]
+        [System.ComponentModel.DataAnnotations.MaxLength(200)]
+        public string Title { get; set; } = string.Empty;
+
+        public string Description { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Duration is required")]
+        [System.ComponentModel.DataAnnotations.Range(1, 365, ErrorMessage = "Duration must be between 1 and 365 days")]
+        public int TrainingDurationInDays { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public DateTime TrainingDate { get; set; }
+    }
+
+    public class AttendeeItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Contact { get; set; } = string.Empty;
+    }
+}
