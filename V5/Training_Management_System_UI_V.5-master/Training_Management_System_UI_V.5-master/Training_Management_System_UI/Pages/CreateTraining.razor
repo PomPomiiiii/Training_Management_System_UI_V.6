@@ -502,13 +502,13 @@
         var description = string.IsNullOrWhiteSpace(model.Description) ? "N/A" : model.Description.Trim();
 
         var (success, message) = await TrainingService.CreateTrainingAsync(
-    model.Title,
-    description,        // ← make sure it's this, not model.Description
-    model.TrainingDurationInDays,
-    UserSessionService.UserId,
-    stagedFiles,
-    attendeeItems
-);
+            model.Title,
+            description,       
+            model.TrainingDurationInDays,
+            UserSessionService.UserId,
+            stagedFiles,
+            attendeeItems
+        );
 
         if (success)
         {

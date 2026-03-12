@@ -568,14 +568,35 @@
         editValidation = string.Empty;
         if (string.IsNullOrWhiteSpace(editTitle)) { editValidation = "Title is required."; return; }
         if (editDuration < 1) { editValidation = "Duration must be at least 1 day."; return; }
+
         isSaving = true;
         StateHasChanged();
-        await Task.Delay(800); // TODO: wire to update endpoint
-        training!.Title = editTitle;
-        training.Description = editDescription;
-        training.TrainingDurationInDays = editDuration;
+
+        var description = string.IsNullOrWhiteSpace(editDescription) ? " " : editDescription;
+
+        var (success, message) = await TrainingService.UpdateTrainingAsync(
+            TrainingId,
+            editTitle,
+            description,
+            editDuration,
+            training!.AttendeeResponse,
+            training!.MaterialResponse
+        );
+
+        if (success)
+        {
+            training!.Title = editTitle;
+            training.Description = editDescription;
+            training.TrainingDurationInDays = editDuration;
+            successMessage = "Training updated successfully!";
+            errorMessage = string.Empty;
+        }
+        else
+        {
+            errorMessage = $"Failed to update: {message}";
+        }
+
         isSaving = false;
-        successMessage = "Training updated successfully!";
         StateHasChanged();
     }
 

@@ -197,5 +197,59 @@ namespace Training_Management_System_UI.Services
                 return (false, ex.Message);
             }
         }
-    }
+
+        public async Task<(bool Success, string Message)> UpdateTrainingAsync(
+            Guid trainingId,
+            string title,
+            string description,
+            int durationInDays,
+            List<AttendeeResponse>? existingAttendees = null,
+            List<MaterialResponse>? existingMaterials = null)
+                {
+                    try
+                    {
+                        var form = new MultipartFormDataContent();
+                        form.Add(new StringContent(trainingId.ToString()), "TrainingId");
+                        form.Add(new StringContent(title), "Title");
+                        form.Add(new StringContent(description), "Description");
+                        form.Add(new StringContent(durationInDays.ToString()), "TrainingDurationInDays");
+
+                        // Send existing attendees back so backend doesn't wipe them
+                        if (existingAttendees != null)
+                        {
+                            for (int i = 0; i < existingAttendees.Count; i++)
+                            {
+                                form.Add(new StringContent(existingAttendees[i].AttendeeId.ToString()), $"UpdateAttendee[{i}].AttendeeId");
+                                form.Add(new StringContent(trainingId.ToString()), $"UpdateAttendee[{i}].TrainingId");
+                                form.Add(new StringContent(existingAttendees[i].FullName), $"UpdateAttendee[{i}].Name");
+                                form.Add(new StringContent(existingAttendees[i].Email), $"UpdateAttendee[{i}].Email");
+                                form.Add(new StringContent(existingAttendees[i].Contact ?? ""), $"UpdateAttendee[{i}].Contact");
+                            }
+                        }
+
+                        // Send existing materials back so backend doesn't wipe them
+                        if (existingMaterials != null)
+                        {
+                            for (int i = 0; i < existingMaterials.Count; i++)
+                            {
+                                form.Add(new StringContent(existingMaterials[i].MaterialId.ToString()), $"UpdateMaterials[{i}].MaterialId");
+                                form.Add(new StringContent(trainingId.ToString()), $"UpdateMaterials[{i}].TrainingId");
+                                form.Add(new StringContent("false"), $"UpdateMaterials[{i}].IsExternal");
+                            }
+                        }
+
+                        var request = new HttpRequestMessage(HttpMethod.Put, $"api/training/update/{trainingId}");
+                        request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+                        request.Content = form;
+
+                        var response = await _http.SendAsync(request);
+                        var message = await response.Content.ReadAsStringAsync();
+                        return (response.IsSuccessStatusCode, message);
+                    }
+                    catch (Exception ex)
+                    {
+                        return (false, ex.Message);
+                    }
+                }
+        }
     }
