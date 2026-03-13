@@ -14,5 +14,8 @@ namespace TrainingManagementSystem.Api.Services.TrainingService
 
         Task<ServiceResult> AddAttendeeAsync(Guid trainingId, AddAttendeeRequest request, CancellationToken token);
         Task<ServiceResult> AddMaterialAsync(Guid trainingId, AddMaterialRequest request, CancellationToken token);
+
+        //DISABLE FUNCTION
+        Task<ServiceResult> UpdateDisabledAsync(Guid trainingId, bool disabled, CancellationToken token);
     }
 }

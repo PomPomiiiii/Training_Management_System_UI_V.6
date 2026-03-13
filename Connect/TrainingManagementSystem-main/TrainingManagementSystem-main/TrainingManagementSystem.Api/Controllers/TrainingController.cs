@@ -74,16 +74,16 @@ namespace TrainingManagementSystem.Api.Controllers
         }
 
         [HttpPost("{trainingId}/attendees")]
-        public async Task<ActionResult> AddAttendee(
-    [FromRoute] Guid trainingId,
-    [FromForm] AddAttendeeRequest request,
-    CancellationToken token)
-        {
-            var result = await _trainingService.AddAttendeeAsync(trainingId, request, token);
-            if (result.IsFailure)
-                return BadRequest(result.Message);
-            return Ok(result.Message);
-        }
+            public async Task<ActionResult> AddAttendee(
+            [FromRoute] Guid trainingId,
+            [FromForm] AddAttendeeRequest request,
+            CancellationToken token)
+                {
+                    var result = await _trainingService.AddAttendeeAsync(trainingId, request, token);
+                    if (result.IsFailure)
+                        return BadRequest(result.Message);
+                    return Ok(result.Message);
+                }
 
         [HttpPost("{trainingId}/materials")]
         public async Task<ActionResult> AddMaterials(
@@ -92,6 +92,18 @@ namespace TrainingManagementSystem.Api.Controllers
             CancellationToken token)
         {
             var result = await _trainingService.AddMaterialAsync(trainingId, request, token);
+            if (result.IsFailure)
+                return BadRequest(result.Message);
+            return Ok(result.Message);
+        }
+
+        [HttpPatch("{trainingId}/disabled")]
+        public async Task<ActionResult> UpdateDisabled(
+        [FromRoute] Guid trainingId,
+        [FromBody] bool disabled,
+        CancellationToken token)
+        {
+            var result = await _trainingService.UpdateDisabledAsync(trainingId, disabled, token);
             if (result.IsFailure)
                 return BadRequest(result.Message);
             return Ok(result.Message);

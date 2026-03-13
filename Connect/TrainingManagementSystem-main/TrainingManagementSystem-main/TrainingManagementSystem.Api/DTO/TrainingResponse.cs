@@ -7,8 +7,8 @@
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public int TrainingDurationInDays { get; set; }
-        public DateTime CreatedAt { get; set; }  // ← ADDED
-        public bool Disabled { get; set; }        // ← ADDED
+        public DateTime CreatedAt { get; set; }  // Added this to get the DateCreation :)
+        public bool Disabled { get; set; }        // FOr DIsable
 
         public List<MaterialResponse> MaterialResponse { get; set; } = new List<MaterialResponse>();
         public List<AttendeeResponse> AttendeeResponse { get; set; } = new List<AttendeeResponse>();

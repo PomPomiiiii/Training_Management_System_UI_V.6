@@ -12,5 +12,6 @@ namespace TrainingManagementSystem.Api.Repositories.TrainingRepository
         Task <TrainingResponse?> GetByIdAsync(Guid trainingId, CancellationToken token);
         Task<Training?> GetForUpdateAsync(Guid trainingId, CancellationToken token);
         Task DeleteAsync(Guid trainingId, CancellationToken token);
+        Task UpdateDisabledAsync(Guid trainingId, bool disabled, CancellationToken token);
     }
 }

@@ -294,5 +294,12 @@ namespace TrainingManagementSystem.Api.Services.TrainingService
                 return ServiceResult.Failure($"Failed to add materials: {ex.Message}");
             }
         }
+
+        public async Task<ServiceResult> UpdateDisabledAsync(Guid trainingId, bool disabled, CancellationToken token)
+        {
+            await _trainingRepository.UpdateDisabledAsync(trainingId, disabled, token);
+            await _unitOfWork.SaveChangesAsync(token);
+            return ServiceResult.Success;
+        }
     }
 }

@@ -107,6 +107,7 @@ builder.Services.AddOptions<EmailSettings>()
     .Bind(builder.Configuration.GetSection("EmailSettings"))
     .ValidateOnStart();
 
+
 //services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();

@@ -100,12 +100,9 @@ namespace Training_Management_System_UI.Services
         {
             try
             {
-                var form = new MultipartFormDataContent();
-                form.Add(new StringContent(disabled.ToString()), "Disabled");
-
-                var request = new HttpRequestMessage(HttpMethod.Put, $"api/training/update/{trainingId}");
+                var request = new HttpRequestMessage(HttpMethod.Patch, $"api/training/{trainingId}/disabled");
                 request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
-                request.Content = form;
+                request.Content = new StringContent(disabled.ToString().ToLower(), System.Text.Encoding.UTF8, "application/json");
 
                 var response = await _http.SendAsync(request);
                 var message = await response.Content.ReadAsStringAsync();

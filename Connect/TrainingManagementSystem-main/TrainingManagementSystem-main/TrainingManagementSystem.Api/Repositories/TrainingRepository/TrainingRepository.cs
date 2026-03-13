@@ -12,7 +12,7 @@ namespace TrainingManagementSystem.Api.Repositories.TrainingRepository
         {
             return await _context.Trainings
                 .AsNoTracking()
-                .Where(t => !t.Disabled)
+                //.Where(t => !t.Disabled)
                 .Select(t => new TrainingResponse
                 {
                     TrainingId = t.TrainingId,
@@ -20,7 +20,9 @@ namespace TrainingManagementSystem.Api.Repositories.TrainingRepository
                     Title = t.Title,
                     Description = t.Description,
                     TrainingDurationInDays = t.TrainingDurationInDays,
-                    CreatedAt = t.CreatedAt,  // ← ADDED
+                    CreatedAt = t.CreatedAt,  // for addeing trainings
+
+                    Disabled = t.Disabled, // for the disabled trainings
 
                     MaterialResponse = t.Materials
                     .Where(m => m.TrainingId == t.TrainingId && !m.Disabled)
@@ -57,15 +59,17 @@ namespace TrainingManagementSystem.Api.Repositories.TrainingRepository
         {
             return await _context.Trainings
                 .AsNoTracking()
-                .Where(t => !t.Disabled)
+                //.Where(t => !t.Disabled)
                 .Select(t => new TrainingResponse
                 {
-                    TrainingId = t.TrainingId,
+                    TrainingId = t.TrainingId,  
                     CreatedByUserId = t.CreatedByUserId,
                     Title = t.Title,
                     Description = t.Description,
                     TrainingDurationInDays = t.TrainingDurationInDays,
-                    CreatedAt = t.CreatedAt,  // ← ADDED
+                    CreatedAt = t.CreatedAt,  // for addeing trainings
+
+                    Disabled = t.Disabled, // for the disabled trainings
 
                     MaterialResponse = t.Materials
                     .Where(m => m.TrainingId == t.TrainingId && !m.Disabled)
@@ -98,7 +102,7 @@ namespace TrainingManagementSystem.Api.Repositories.TrainingRepository
             return await _context.Trainings
                 .Include(t => t.Attendees)
                 .Include(t => t.Materials)
-                .FirstOrDefaultAsync(t => t.TrainingId == trainingId && !t.Disabled, token);
+                .FirstOrDefaultAsync(t => t.TrainingId == trainingId, token); // ← remove && !t.Disabled
         }
 
         public async Task DeleteAsync(Guid trainingId, CancellationToken token)
@@ -119,6 +123,13 @@ namespace TrainingManagementSystem.Api.Repositories.TrainingRepository
 
                 _context.Attendees.RemoveRange(training.Attendees);
             }
+        }
+
+        public async Task UpdateDisabledAsync(Guid trainingId, bool disabled, CancellationToken token)
+        {
+            await _context.Trainings
+                .Where(t => t.TrainingId == trainingId)
+                .ExecuteUpdateAsync(s => s.SetProperty(t => t.Disabled, disabled), token);
         }
     }
 }
